@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.Toolbar
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@color/colorblank">
+
+    <ImageView
+        android:id="@+id/search_back"
+        android:layout_width="25dp"
+        android:layout_height="wrap_content"
+        app:srcCompat="@drawable/back_black" />
+    <EditText
+        android:id="@+id/geobuy_search"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/colorblank"
+        android:layout_alignParentStart="true"
+        android:clickable="true"
+        android:paddingStart="20dp"
+        android:hint="@string/search_products_brands"
+        android:textColorHint="@color/black_overlay"
+        android:textAllCaps="false"
+        android:textColor="@color/black_overlay"
+        />
+
+</android.support.v7.widget.Toolbar>
