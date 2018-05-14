@@ -16,6 +16,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -129,11 +130,15 @@ public class MainActivity extends AppCompatActivity
 
     private void setViewSelected(int position) {
         //
+        LinearLayout appBarLayout = findViewById(R.id.default_app_bar);
+        LinearLayout welcomeBarLayout = findViewById(R.id.welcometoolbarLaout);
         if(selectedPos != position) {
           //  Toast.makeText(this, "TESTTTt", Toast.LENGTH_LONG).show();
             deSelectOthers(position);
             switch(position) {
                 case 1 : {
+                    hideView(welcomeBarLayout);
+                    showView(appBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
                     MapFragment mapFragment = new MapFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, mapFragment).commit();
@@ -143,6 +148,8 @@ public class MainActivity extends AppCompatActivity
                     break;
                 }
                 case 2 : {
+                    hideView(welcomeBarLayout);
+                    showView(appBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
                     CategoryFragment categoryFragment = new CategoryFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, categoryFragment).commit();
@@ -152,18 +159,27 @@ public class MainActivity extends AppCompatActivity
                     break;
                 }
                 case 3 : {
+                    hideView(welcomeBarLayout);
+                    showView(appBarLayout);
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.home_primary);
                     homeView.setImageDrawable(mIcon);
                     homeText.setTextColor(getResources().getColor(R.color.colorPrimary));
                     break;
                 }
                 case 4 : {
+                    hideView(welcomeBarLayout);
+                    showView(appBarLayout);
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.prime_primary);
                     primeView.setImageDrawable(mIcon);
                     primeText.setTextColor(getResources().getColor(R.color.colorPrimary));
                     break;
                 }
                 case 5 : {
+                    hideView(appBarLayout);
+                    showView(welcomeBarLayout);
+                    FragmentManager fm = getSupportFragmentManager();
+                    UserFragment userFragment = new UserFragment();
+                    fm.beginTransaction().replace(R.id.dashboard_content, userFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.account_primary);
                     accountView.setImageDrawable(mIcon);
                     accountText.setTextColor(getResources().getColor(R.color.colorPrimary));
@@ -264,5 +280,21 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+
+    private void showView (View... views){
+        for(View v: views){
+            v.setVisibility(View.VISIBLE);
+
+        }
+
+    }
+    private void hideView (View... views){
+        for(View v: views){
+            v.setVisibility(View.GONE);
+
+        }
+
     }
 }

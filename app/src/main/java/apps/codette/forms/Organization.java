@@ -1,12 +1,13 @@
 package apps.codette.forms;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by user on 24-03-2018.
  */
 
-public class Organization {
+public class Organization implements Serializable{
     private String orgname;
     private String orgphoneno;
     private String orgemail;
@@ -19,6 +20,7 @@ public class Organization {
     private String category;
     private String orgaddress;
     private String[] images;
+    private String logo;
 
     public Organization (String orgname, String[] images){
         this.orgname = orgname;
@@ -123,6 +125,14 @@ public class Organization {
 
     public void setFollowers(String[] followers) {
         this.followers = followers;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
     }
 
     @Override

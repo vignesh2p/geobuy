@@ -55,9 +55,12 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".SearchResultActivity"
-            android:theme="@style/AppTheme.NoActionBar"
             android:label="Search Results"
-            ></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".BusinessActivity"
+            android:label="@string/title_activity_business"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

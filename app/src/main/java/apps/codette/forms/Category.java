@@ -5,7 +5,7 @@ package apps.codette.forms;
  */
 
 public class Category {
-    private int id;
+    private String id;
     private String subtittle;
     private String tittle;
     private String image;
@@ -31,11 +31,11 @@ public class Category {
         this.image = image;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

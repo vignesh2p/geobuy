@@ -2,6 +2,8 @@ package apps.codette.geobuy;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -13,6 +15,7 @@ import android.graphics.drawable.Icon;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -26,6 +29,15 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -47,14 +59,18 @@ import com.loopj.android.http.RequestParams;
 import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import apps.codette.forms.Organization;
 import apps.codette.geobuy.Constants.GeobuyConstants;
 import apps.codette.geobuy.adapters.MyCustomPagerAdapter;
 import apps.codette.utils.CClocation;
 import apps.codette.utils.RestCall;
+import apps.codette.utils.SessionManager;
 import cz.msebera.android.httpclient.Header;
 import me.relex.circleindicator.CircleIndicator;
 
@@ -79,7 +95,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
 
-    ProgressDialog pd;
+    //ProgressDialog pd;
 
     List<Organization> organizations = null;
     private OnFragmentInteractionListener mListener;
@@ -98,8 +114,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     LatLngBounds platLngBounds;
 
+    SessionManager sessionManager;
+
+    ProgressDialog progressDialog;
+
     public MapFragment() {
         // Required empty public constructor
+
     }
 
     /**
@@ -135,6 +156,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                              Bundle savedInstanceState) {
         View view = null;
         view = inflater.inflate(apps.codette.geobuy.R.layout.fragment_map, container, false);
+        sessionManager = new SessionManager(this.getContext());
+        progressDialog = new ProgressDialog(this.getContext());
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER );
+        progressDialog.setIndeterminate(true);
+        progressDialog.setMessage("Loading");
+        progressDialog.setCancelable(false);
+        progressDialog.setCanceledOnTouchOutside(false);
+
        /* filter_distance = view.findViewById(R.id.filter_distance);
         filter_location = view.findViewById(R.id.filter_location);
         filter_distance.setText(distance+" Km");
@@ -195,11 +224,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         Log.i("latLng",latLng.latitude+"");
         Log.i("latLng",latLng.longitude+"");
         TextView txtclose;
-        Button btnFollow;
 
         businessDetailsDialog.setContentView(R.layout.business_details_popup);
         txtclose =(TextView) businessDetailsDialog.findViewById(R.id.txtclose);
-        btnFollow = (Button) businessDetailsDialog.findViewById(R.id.btnfollow);
         txtclose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -212,16 +239,25 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 assignOrgDetails(org);
             }
         }
-        businessDetailsDialog.show();
+
     }
 
-    private void assignOrgDetails(Organization org) {
+    private void assignOrgDetails(final Organization org) {
+
         TextView btv = businessDetailsDialog.findViewById(R.id.business_name);
         TextView bdtv = businessDetailsDialog.findViewById(R.id.business_detail);
         TextView ftv = businessDetailsDialog.findViewById(R.id.followers_count);
         TextView ptv = businessDetailsDialog.findViewById(R.id.products_count);
         TextView etv = businessDetailsDialog.findViewById(R.id.business_email);
         TextView ntv = businessDetailsDialog.findViewById(R.id.business_phone);
+        final Button btnfollow = businessDetailsDialog.findViewById(R.id.btnfollow);
+        Button org_view_profile = businessDetailsDialog.findViewById(R.id.org_view_profile);
+        org_view_profile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                moveToOrgProfile(org.getOrgid());
+            }
+        });
         btv.setText(org.getOrgname());
         CircleIndicator indicator = (CircleIndicator) businessDetailsDialog.findViewById(R.id.indicator);
 
@@ -237,11 +273,47 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             ptv.setText(org.getProducts().size()+"");
         } else
             ptv.setText(0+"");
+
+        String[] followers = org.getFollowers();
         if(org.getFollowers() != null) {
             ftv.setText(org.getFollowers().length+"");
-        } else
-            ftv.setText(0+"");
 
+            Map<String, ?> userDetails =  sessionManager.getUserDetails();
+            String email = (String) userDetails.get("useremail");
+            List<String> foll = Arrays.asList(followers);
+            if(foll.contains(email)) {
+                btnfollow.setText("Following");
+                btnfollow.setTextColor(getResources().getColor(R.color.white));
+                btnfollow.setBackground(getResources().getDrawable(R.drawable.selectedbutton));
+                btnfollow.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        followOrg(org.getOrgid(), btnfollow,false);
+                    }
+                });
+            } else {
+                btnfollow.setText("Follow");
+                btnfollow.setTextColor(getResources().getColor(R.color.colorPrimary));
+                btnfollow.setBackground(getResources().getDrawable(R.drawable.selected));
+                btnfollow.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        followOrg(org.getOrgid(), btnfollow, true);
+                    }
+                });
+            }
+        } else {
+            ftv.setText(0 + "");
+            btnfollow.setText("Follow");
+            btnfollow.setTextColor(getResources().getColor(R.color.colorPrimary));
+            btnfollow.setBackground(getResources().getDrawable(R.drawable.selected));
+            btnfollow.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    followOrg(org.getOrgid(), btnfollow,true);
+                }
+            });
+        }
         if(org.getOrgemail() != null)
             etv.setText(org.getOrgemail());
         else
@@ -252,6 +324,57 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         else
             ntv.setText("-");
 
+        businessDetailsDialog.show();
+    }
+
+    private void moveToOrgProfile(String orgid) {
+        Intent intent = new Intent(this.getContext(), BusinessActivity.class);
+        intent.putExtra("orgid", orgid);
+        this.startActivity(intent);
+    }
+
+    private void followOrg(final String orgid, final Button btnfollow, final boolean follow) {
+        Map<String, ?> userDetails =  sessionManager.getUserDetails();
+        String email = (String) userDetails.get("useremail");
+        RequestParams requestParams = new RequestParams();
+        requestParams.put("orgid", orgid);
+        requestParams.put("follower", email);
+        requestParams.put("follow", follow);
+        progressDialog.show();
+        RestCall.post("followOrg", requestParams, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                if(follow)
+                {
+                    btnfollow.setText("Following");
+                    btnfollow.setTextColor(getResources().getColor(R.color.white));
+                    btnfollow.setBackground(getResources().getDrawable(R.drawable.selectedbutton));
+                    btnfollow.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            followOrg(orgid, btnfollow,false);
+                        }
+                    });
+                } else {
+                    btnfollow.setText("Follow");
+                    btnfollow.setTextColor(getResources().getColor(R.color.colorPrimary));
+                    btnfollow.setBackground(getResources().getDrawable(R.drawable.selected));
+                    btnfollow.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            followOrg(orgid, btnfollow,true);
+                        }
+                    });
+                }
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                progressDialog.dismiss();
+                toast(getResources().getString(R.string.try_later));
+            }
+        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -284,7 +407,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         void onFragmentInteraction(Uri uri);
     }
 
-
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -311,14 +434,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         } catch (Resources.NotFoundException e) {
             Log.e("MF", "Can't find style. Error: ", e);
         }
+        if (ActivityCompat.checkSelfPermission(getContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(getContext(),
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-        if (ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+            ActivityCompat.requestPermissions(getActivity(),
+                    new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_LOCATION);
+        } else {
+            mMap.setMyLocationEnabled(true);
+            Log.e("DB", "PERMISSION GRANTED");
+            requestToTurnOnGPS();
+
+        }
+       /* if (ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this.getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         } else {
             goToCurrentLocationInMap();
-        }
+        }*/
 
     }
 
@@ -357,7 +494,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             BitmapDescriptor d = BitmapDescriptorFactory.fromBitmap(smallMarker);
             markerOptions.icon(d);
             markerOptions.draggable(true);
-            mMap.addMarker(markerOptions);
+          //  mMap.addMarker(markerOptions);
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(pos)      // Sets the center of the map to Mountain View
                     .zoom(17)                   // Sets the zoom
@@ -411,11 +548,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void getOrgsByLocation(RequestParams params) {
-        pd = new ProgressDialog(this.getContext());
+       /* pd = new ProgressDialog(this.getContext());
         pd.setProgressStyle(ProgressDialog.STYLE_SPINNER );
         pd.setIndeterminate(true);
         pd.setMessage("Loading");
-        pd.show();
+        pd.show();*/
         RestCall.post("storesByPosition", params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -427,8 +564,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                if(pd != null)
-                    pd.dismiss();
+               /* if(pd != null)
+                    pd.dismiss();*/
                 toast(getResources().getString(R.string.try_later));
             }
         });
@@ -463,34 +600,97 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             } else {
                 toast("No Sellers found in nearby areas");
             }
-            pd.hide();
+           // pd.hide();
         } catch (Exception ex) {
             ex.printStackTrace();
-            pd.hide();
+           // pd.hide();
             toast("Failure :: "+ex.getMessage());
         }
 
     }
 
-    private void toast(String msg) {
-        Toast.makeText(this.getContext(), msg, Toast.LENGTH_LONG).show();
-    }
 
     private void setLatLng(LatLng position) {
         latLng = position;
     }
 
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,  int[] grantResults) {
 
+        Log.i("requestCode", ""+requestCode);
         //Checking the request code of our request
         if (requestCode == ACESS_FINE_LOCATION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                goToCurrentLocationInMap();
+
                 Toast.makeText(this.getContext(), "Permission granted now you can read the storage", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this.getContext(), "Oops you just denied the permission", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+
+
+
+    private void requestToTurnOnGPS (){
+
+        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(this.getContext())
+                .addApi(LocationServices.API)
+                //.addConnectionCallbacks(this)
+                //.addOnConnectionFailedListener(this)
+                .build();
+        googleApiClient.connect();
+
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(5 * 1000);
+        locationRequest.setFastestInterval(2 * 1000);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+
+        //**************************
+        builder.setAlwaysShow(true); //this is the key ingredient
+        //**************************
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(@NonNull LocationSettingsResult result) {
+                final Status status = result.getStatus();
+//                final LocationSettingsStates state = result.getLocationSettingsStates();
+
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        goToCurrentLocationInMap();
+
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+                        try {
+                            // Show the dialog by calling startResolutionForResult(),
+                            // and check the result in onActivityResult().
+                            getS(status);
+
+                        } catch (IntentSender.SendIntentException e) {
+                            // Ignore the error.
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        break;
+                }
+            }
+        });
+    }
+
+    private void getS(Status status) throws IntentSender.SendIntentException {
+        status.startResolutionForResult(this.getActivity(), 1000);
+    }
+
+
+    private void toast(String s) {
+        Toast.makeText(this.getContext(), ""+s, Toast.LENGTH_SHORT).show();
     }
 }

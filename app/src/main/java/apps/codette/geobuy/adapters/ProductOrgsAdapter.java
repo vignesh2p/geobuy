@@ -1,6 +1,7 @@
 package apps.codette.geobuy.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -17,6 +18,7 @@ import java.util.List;
 
 import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
+import apps.codette.geobuy.BusinessActivity;
 import apps.codette.geobuy.ProductDetailsActivity;
 import apps.codette.geobuy.R;
 
@@ -64,6 +66,13 @@ public class ProductOrgsAdapter extends RecyclerView.Adapter<ProductOrgsAdapter.
                 loadProductDetails(product.getMasterid(), product.getOrgid());
             }
         });
+        holder.product_org_card.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                moveToOrgProfile(product.getOrgid());
+                return false;
+            }
+        });
 
         if(product.getOffer() != 0) {
             float discount = (Float.valueOf(product.getOffer()) /100) *product.getPrice();
@@ -74,7 +83,13 @@ public class ProductOrgsAdapter extends RecyclerView.Adapter<ProductOrgsAdapter.
 
     }
 
-    private void loadProductDetails(int id, String orgId) {
+    private void moveToOrgProfile(String orgid) {
+        Intent intent = new Intent(mCtx, BusinessActivity.class);
+        intent.putExtra("orgid", orgid);
+        mCtx.startActivity(intent);
+    }
+
+    private void loadProductDetails(String id, String orgId) {
         this.productDetailsActivity.getProductDetails(id, orgId);
     }
 

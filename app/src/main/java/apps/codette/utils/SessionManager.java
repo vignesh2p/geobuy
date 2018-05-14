@@ -28,7 +28,7 @@ public class SessionManager {
     int PRIVATE_MODE = 0;
 
     // Sharedpref file name
-    private static final String PREF_NAME = "CodettePref";
+    private static final String PREF_NAME = "GeobuyPref";
 
     // All Shared Preferences Keys
     private static final String IS_LOGIN = "IsLoggedIn";
@@ -46,6 +46,14 @@ public class SessionManager {
         editor = pref.edit();
     }
 
+    public SharedPreferences.Editor getEditor() {
+        return editor;
+    }
+
+    public void put( SharedPreferences.Editor editor) {
+        this.editor = editor;
+        this.editor.commit();
+    }
     /**
      * Create login session
      * */
@@ -82,16 +90,9 @@ public class SessionManager {
     /**
      * Get stored session data
      * */
-    public HashMap<String, String> getUserDetails(){
-        HashMap<String, String> user = new HashMap<String, String>();
-        // user name
-        //user.put(KEY_NAME, pref.getString(KEY_NAME, null));
-        Log.e("getUserDetails",""+pref.getString(KEY_EMAIL, null));
-        // user email id
-         user.put(KEY_EMAIL, pref.getString(KEY_EMAIL, null));
-
-        // return user
-        return user;
+    public  Map<String, ?> getUserDetails(){
+        Map<String, ?> map = pref.getAll();
+        return map;
     }
 
     /**

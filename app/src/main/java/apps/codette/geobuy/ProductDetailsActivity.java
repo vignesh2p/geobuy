@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
@@ -71,7 +72,7 @@ public class ProductDetailsActivity extends AppCompatActivity {
         });
         Intent intent = getIntent();
         String orgId = "";
-        int productId = intent.getIntExtra("productId",0);
+        String productId = intent.getStringExtra("productId");
         getProductDetails(productId, null);
     }
 
@@ -121,7 +122,7 @@ public class ProductDetailsActivity extends AppCompatActivity {
         product_rating_review.setText(ratingReviews);
     }
 
-    public void getProductDetails(final int productId,final String orgId) {
+    public void getProductDetails(final String productId,final String orgId) {
         pd = new ProgressDialog(this);
         pd.setProgressStyle(ProgressDialog.STYLE_SPINNER );
         pd.setCancelable(false);
@@ -216,10 +217,10 @@ public class ProductDetailsActivity extends AppCompatActivity {
     }
 
     private void toast(String s) {
-        Toast.makeText(this, ""+s, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, ""+s, Toast.LENGTH_SHORT).show();
     }
 
-    private void manageRateAndReview(final int productId, final String orgId, final List<Review> reviews) {
+    private void manageRateAndReview(final String productId, final String orgId, final List<Review> reviews) {
         Button rateAndReviewButton = findViewById(R.id.rate_and_review_button);
         rateAndReviewButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -229,7 +230,7 @@ public class ProductDetailsActivity extends AppCompatActivity {
         });
     }
 
-    private void manageRateAndReviewPopup(final int productId, final String orgId, final List<Review> reviews) {
+    private void manageRateAndReviewPopup(final String productId, final String orgId, final List<Review> reviews) {
         rate_Review_dialog = new Dialog(this);
         rate_Review_dialog.setContentView(R.layout.rate_review_popup);
         final RatingBar ratingBar =(RatingBar) rate_Review_dialog.findViewById(R.id.product_rating_bar);
@@ -262,7 +263,7 @@ public class ProductDetailsActivity extends AppCompatActivity {
     }
     List<Review> newReviews = null;
 
-    private void submitRateAndReview(final int productId, final String orgId, final List<Review> reviews) {
+    private void submitRateAndReview(final String productId, final String orgId, final List<Review> reviews) {
         if(reviews != null)
             newReviews = new ArrayList<Review>(reviews);
         else
@@ -281,7 +282,7 @@ public class ProductDetailsActivity extends AppCompatActivity {
         requestParams.put("review",reviewText.getText());
         requestParams.put("time",time);
         requestParams.put("user","user");
-        Review review = new Review(999, shrtText.getText().toString(),reviewText.getText().toString(), time,ratingBar.getRating(),"user" );
+        Review review = new Review(UUID.randomUUID().toString(), shrtText.getText().toString(),reviewText.getText().toString(), time,ratingBar.getRating(),"user" );
         newReviews.add(review);
         RestCall.post("rateAndReview", requestParams, new AsyncHttpResponseHandler() {
             @Override

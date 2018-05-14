@@ -58,7 +58,7 @@ public class CategoryAdapter  extends RecyclerView.Adapter<CategoryAdapter.Categ
         holder.textViewTitle.setText(category.getTittle());
     }
 
-    private void openProductsForCategory(int categoryId) {
+    private void openProductsForCategory(String categoryId) {
         Intent intent = new Intent(mCtx, SearchResultActivity.class);
         intent.putExtra("categoryId", categoryId);
         mCtx.startActivity(intent);

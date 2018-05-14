@@ -140,4 +140,11 @@
     <string name="try_later"> Please try again after some time</string>
     <string name="trending_searches">Search Results</string>
     <string name="filter_stores">Stores</string>
+    <string name="title_activity_business">Store Details</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="tab_text_3">Tab 3</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="details">Details</string>
+    <string name="reviews">Reviews</string>
 </resources>

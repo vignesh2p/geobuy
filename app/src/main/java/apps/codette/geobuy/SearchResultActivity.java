@@ -45,8 +45,8 @@ public class SearchResultActivity extends AppCompatActivity {
                 closeSearch();
             }
         });
-        int categoryId = extras.getIntExtra("categoryId",0 );
-        if( categoryId != 0) {
+        String categoryId = extras.getStringExtra("categoryId");
+        if( categoryId != null) {
             pd = new ProgressDialog(this);
             pd.setProgressStyle(ProgressDialog.STYLE_SPINNER );
             pd.setCancelable(false);
@@ -55,7 +55,7 @@ public class SearchResultActivity extends AppCompatActivity {
             pd.setMessage("Loading");
             pd.show();
             RequestParams requestParams = new RequestParams();
-            requestParams.put("categoryid",categoryId);
+            requestParams.put("category",categoryId);
             RestCall.post("getProductsByCategory", requestParams, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {

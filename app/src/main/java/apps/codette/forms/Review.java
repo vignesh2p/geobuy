@@ -2,7 +2,7 @@ package apps.codette.forms;
 
 public class Review {
 
-    private int id;
+    private String id;
     private String heading;
     private String review;
     private String time;
@@ -23,7 +23,7 @@ public class Review {
                 '}';
     }
 
-    public Review(int id, String heading, String review, String time, float ratings, String user){
+    public Review(String id, String heading, String review, String time, float ratings, String user){
         this.id = id;
         this.heading = heading;
         this.review = review;
@@ -58,11 +58,11 @@ public class Review {
         this.ratings = ratings;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

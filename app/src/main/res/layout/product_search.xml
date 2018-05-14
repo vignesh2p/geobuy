@@ -64,6 +64,21 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:visibility="gone"
+                android:id="@+id/product_no_rating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/productTitle"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="5dp"
+                android:layout_toRightOf="@id/product_image"
+                android:paddingRight="15dp"
+                android:textColor="@color/black_overlay"
+                android:text="No Reviews"
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Small.Inverse"
+                 />
+
+            <TextView
                 android:id="@+id/preferred_org"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -67,15 +67,22 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         holder.productTitle.setText(product.getTitle());
         if(product.getRating() > 0)
             holder.productRating.setText(""+product.getRating());
-        else
+        else {
             holder.productRating.setVisibility(View.INVISIBLE);
-
+            holder.product_no_rating.setVisibility(View.VISIBLE);
+        }
         Log.i("product", product.toString());
-        if(product.getProductDetails() != null && product.getProductDetails().size() > 0) {
-            float discount = (Float.valueOf(product.getProductDetails().get(0).getOffer()) /100) *product.getProductDetails().get(0).getPrice();
-            holder.productPrice.setText("₹ "+(product.getProductDetails().get(0).getPrice()-discount));
+        if(product.getProductDetails() != null) {
+            if (product.getProductDetails() != null && product.getProductDetails().size() > 0) {
+                float discount = (Float.valueOf(product.getProductDetails().get(0).getOffer()) / 100) * product.getProductDetails().get(0).getPrice();
+                holder.productPrice.setText("₹ " + (product.getProductDetails().get(0).getPrice() - discount));
+            } else {
+                holder.productPrice.setText("₹ " + product.getProductDetails().get(0).getPrice());
+            }
+            holder.preferred_org.setText(product.getProductDetails().get(0).getOrgname());
         } else {
-            holder.productPrice.setText("₹ "+product.getProductDetails().get(0).getPrice());
+            holder.productPrice.setText("₹ " + product.getPrice());
+            holder.preferred_org.setText(product.getOrgname());
         }
       //  holder.productPrice.setText("₹"+product.getProductDetails().get(0).getPrice());
 
@@ -99,7 +106,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 openProductDetailsPopup(product);
             }
         });
-        holder.preferred_org.setText(product.getProductDetails().get(0).getOrgname());
+
         //setOnclick(product.getId(), holder.selectProduct);
     }
 
@@ -109,7 +116,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         List<Product> products =  product.getProductDetails();
         productOrgDialog = new Dialog(mCtx);
         productOrgDialog.setContentView(R.layout.check_availability_product);
-        formOrgs(getOrgs(products), productOrgDialog);
+        if(products != null ){
+            formOrgs(getOrgs(products), productOrgDialog);
+        } else {
+            products = new ArrayList<>();
+            products.add(product);
+            formOrgs(getOrgs(products), productOrgDialog);
+        }
         Button close = productOrgDialog.findViewById(R.id.close);
         close.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -147,7 +160,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         }
     }
 
-    private void moveToProductDetailActivity(int id) {
+    private void moveToProductDetailActivity(String id) {
         Intent intent = new Intent(mCtx, ProductDetailsActivity.class);
         intent.putExtra("productId", id);
         mCtx.startActivity(intent);
@@ -167,12 +180,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
     @Override
     public int getItemCount() {
-        return products.size();
+        if(products != null)
+            return products.size();
+        else
+            return 0;
     }
 
     @Override
     public long getItemId(int i) {
-        return products.get(i).getId();
+        return 0;
     }
 
 
@@ -184,6 +200,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         ImageView imageView;
         TextView productRating;
         TextView productPrice;
+        TextView product_no_rating;
         LinearLayout checkNearbyAvailablity;
         CardView product_card;
         LinearLayout check_nearby;
@@ -195,6 +212,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             productTitle = itemView.findViewById(R.id.productTitle);
             imageView = itemView.findViewById(R.id.product_image);
             productRating = itemView.findViewById(R.id.product_rating);
+            product_no_rating = itemView.findViewById(R.id.product_no_rating);
             productPrice = itemView.findViewById(R.id.product_price);
             checkNearbyAvailablity = itemView.findViewById(R.id.check_nearby);
             product_card = itemView.findViewById(R.id.product_card);

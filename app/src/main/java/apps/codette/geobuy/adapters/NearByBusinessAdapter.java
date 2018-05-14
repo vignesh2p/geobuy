@@ -1,6 +1,7 @@
 package apps.codette.geobuy.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -14,6 +15,7 @@ import com.bumptech.glide.Glide;
 import java.util.List;
 
 import apps.codette.forms.Organization;
+import apps.codette.geobuy.BusinessActivity;
 import apps.codette.geobuy.R;
 
 /**
@@ -42,12 +44,33 @@ public class NearByBusinessAdapter extends RecyclerView.Adapter<NearByBusinessAd
 
     @Override
     public void onBindViewHolder(BusinessViewHolder holder, int position) {
-        Organization busns = business.get(position);
+        final Organization busns = business.get(position);
         if(busns.getImages() != null)
             Glide.with(mCtx).load(busns.getImages()[0]).into(holder.imageView);
         else
             Glide.with(mCtx).load(drawable).into(holder.imageView);
         holder.textViewTitle.setText(busns.getOrgname());
+        holder.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                moveToOrgDetails(busns.getOrgid());
+            }
+        });
+        holder.textViewTitle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                moveToOrgDetails(busns.getOrgid());
+            }
+        });
+
+    }
+
+
+
+    private void moveToOrgDetails(String orgid) {
+        Intent intent = new Intent(mCtx, BusinessActivity.class);
+        intent.putExtra("orgid", orgid);
+        mCtx.startActivity(intent);
     }
 
 

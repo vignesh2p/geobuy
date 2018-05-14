@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Product {
-    private int id;
+    private String id;
     private String orgname;
     private String orgid;
     private String title;
@@ -20,13 +20,13 @@ public class Product {
     private int price;
     private float rating;
     private List<Product> productDetails;
-    private int masterid;
+    private String masterid;
 
-    public int getMasterid() {
+    public String getMasterid() {
         return masterid;
     }
 
-    public void setMasterid(int masterid) {
+    public void setMasterid(String masterid) {
         this.masterid = masterid;
     }
 
@@ -96,11 +96,11 @@ public class Product {
         this.searchkey = searchkey;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
