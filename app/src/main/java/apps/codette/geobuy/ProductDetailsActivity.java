@@ -4,16 +4,25 @@ import android.app.ActionBar;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -28,12 +37,17 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+import com.mikepenz.actionitembadge.library.ActionItemBadge;
+import com.mikepenz.actionitembadge.library.utils.BadgeStyle;
+
+import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import apps.codette.forms.Organization;
@@ -41,19 +55,25 @@ import apps.codette.forms.Product;
 import apps.codette.forms.Rating;
 import apps.codette.forms.Review;
 import apps.codette.geobuy.Constants.GeobuyConstants;
+import apps.codette.geobuy.Constants.OrgService;
 import apps.codette.geobuy.adapters.MyCustomPagerAdapter;
 import apps.codette.geobuy.adapters.NearByBusinessAdapter;
 import apps.codette.geobuy.adapters.ProductHighlightsAdapter;
 import apps.codette.geobuy.adapters.ProductOrgsAdapter;
 import apps.codette.geobuy.adapters.ReviewsAdapter;
 import apps.codette.utils.RestCall;
+import apps.codette.utils.SessionManager;
 import cz.msebera.android.httpclient.Header;
 import me.relex.circleindicator.CircleIndicator;
 
-public class ProductDetailsActivity extends AppCompatActivity {
+public class ProductDetailsActivity extends AppCompatActivity  implements MenuItem.OnMenuItemClickListener{
 
     Dialog rate_Review_dialog;
     ProgressDialog pd;
+    Button add_to_cart;
+    SessionManager sessionManager;
+    Menu menu;
+    Map<String, ?> userDetails;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,17 +83,72 @@ public class ProductDetailsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
             }
         });
+        sessionManager = new SessionManager(this);
+        userDetails = sessionManager.getUserDetails();
+
         Intent intent = getIntent();
-        String orgId = "";
-        String productId = intent.getStringExtra("productId");
+        final String productId = intent.getStringExtra("productId");
         getProductDetails(productId, null);
+
+    }
+
+
+
+
+    private void moveProductToCart(Product productDetail) {
+        if(userDetails.get("useremail") != null) {
+            StringBuilder products = new StringBuilder();
+            String productId = productDetail.getId();
+            String[] cartProducts = null;
+            int length=1;
+            if(userDetails.get("cart") != null && !userDetails.get("cart").toString().isEmpty()) {
+                String cart = (String) userDetails.get("cart");
+                if(!cart.contains(productId))
+                    products.append(cart+","+productId);
+                else {
+                    products.append(cart);
+                    int quanity = productDetail.getQuanity();
+                    productDetail.setQuanity(++quanity);
+                }
+            }  else {
+                products.append(productId);
+            }
+            SharedPreferences.Editor editor = sessionManager.getEditor();
+            editor.putString("cart", products.toString());
+            sessionManager.put(editor);
+            String user = (String) userDetails.get("useremail");
+            syncWithUserCart(productDetail, user);
+        } else {
+            Intent intent = new Intent(this, SigninActivity.class);
+            startActivity(intent);
+        }
+
+    }
+
+    private void syncWithUserCart(Product product, String user) {
+        RequestParams requestParams = new RequestParams();
+        requestParams.put("cart",new Gson().toJson(new Product(product.getId(), product.getQuanity())));
+        requestParams.put("useremail",user);
+        int count = new OrgService().getCartItems(this);
+        ActionItemBadge.update(menu.findItem(R.id.item_samplebadge), count);
+        toast(getResources().getString(R.string.product_added_to_cart));
+        RestCall.post("addToCart", requestParams, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                //toast(getResources().getString(R.string.review_done));
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                toast(getResources().getString(R.string.try_later));
+            }
+        });
     }
 
     private void manageAllTextViews(Product product) {
@@ -87,19 +162,14 @@ public class ProductDetailsActivity extends AppCompatActivity {
         TextView no_of_ratings = (TextView) findViewById(R.id.no_of_ratings);
         product_price_old.setPaintFlags(product_price_old.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         List<Rating> ratings = product.getRatings();
-        float rating = 0;
+        float rating = product.getRating();
         String ratingReviews ="";
+        product_total_rating.setText(""+rating);
+        product_rating.setText(""+rating);
         if(ratings != null && !ratings.isEmpty()) {
-            for(Rating rt : ratings)
-                rating = rating + rt.getRating();
-            rating = rating / ratings.size();
-            product_total_rating.setText(""+rating);
-            product_rating.setText(""+rating);
             no_of_ratings.setText(ratings.size()+" ratings");
             ratingReviews = ratingReviews +ratings.size()+" ratings";
         } else {
-            product_total_rating.setText(""+0);
-            product_rating.setText(""+0);
             no_of_ratings.setText(0 +" ratings");
             ratingReviews = ratingReviews + "0 ratings";
         }
@@ -171,6 +241,13 @@ public class ProductDetailsActivity extends AppCompatActivity {
         manageRateAndReview(productDetail.getId(), productDetail.getOrgid(), productDetail.getReviews());
         manageAllTextViews(productDetail);
         pd.dismiss();
+        add_to_cart = findViewById(R.id.add_to_cart);
+        add_to_cart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                moveProductToCart(productDetail);
+            }
+        });
     }
 
     private void formProductOrgs(List<Product> productDetails, String orgId) {
@@ -281,7 +358,8 @@ public class ProductDetailsActivity extends AppCompatActivity {
         requestParams.put("heading",shrtText.getText());
         requestParams.put("review",reviewText.getText());
         requestParams.put("time",time);
-        requestParams.put("user","user");
+        requestParams.put("user",(String)userDetails.get("username"));
+        requestParams.put("useremail",(String)userDetails.get("useremail"));
         Review review = new Review(UUID.randomUUID().toString(), shrtText.getText().toString(),reviewText.getText().toString(), time,ratingBar.getRating(),"user" );
         newReviews.add(review);
         RestCall.post("rateAndReview", requestParams, new AsyncHttpResponseHandler() {
@@ -301,14 +379,15 @@ public class ProductDetailsActivity extends AppCompatActivity {
     }
 
     private void formReviews(List<Review> reviews) {
+        RecyclerView rv = (RecyclerView) findViewById(R.id.product_reviews_recyclerview);
         if(reviews != null) {
-            RecyclerView rv = (RecyclerView) findViewById(R.id.product_reviews_recyclerview);
             ReviewsAdapter adapter = new ReviewsAdapter(this, reviews);
             LinearLayoutManager linearLayoutManager  = new LinearLayoutManager(this);
             rv.setLayoutManager(linearLayoutManager);
             rv.setAdapter(adapter);
-            rv.setNestedScrollingEnabled(false);
-        }
+          //  rv.setNestedScrollingEnabled(false);
+        } else
+            hideView(rv);
 
     }
 
@@ -329,6 +408,31 @@ public class ProductDetailsActivity extends AppCompatActivity {
         //rv.setNestedScrollingEnabled(false);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        this.menu = menu;
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        Drawable dr = getResources().getDrawable(R.drawable.kart);
+        Bitmap bitmap = ((BitmapDrawable) dr).getBitmap();
+        // Scale it to 50 x 50
+        Drawable d = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, 75, 75, true));
+        // Set your new, scaled drawable "d"
+        BadgeStyle badgeStyle = ActionItemBadge.BadgeStyles.DARK_GREY.getStyle();
+        MenuItem menuItem = menu.findItem(R.id.item_samplebadge);
+        menuItem.setOnMenuItemClickListener(this);
+        OrgService orgService = new OrgService();
+        int count = orgService.getCartItems(this);
+        ActionItemBadge.update(this, menuItem,  d, badgeStyle, count);
+        return true;
+    }
+
+    private void moveToCart() {
+        Intent intent = new Intent(this, CartActivity.class);
+        startActivity(intent);
+    }
+
+
     private void showView (View... views){
         for(View v: views){
             v.setVisibility(View.VISIBLE);
@@ -342,5 +446,29 @@ public class ProductDetailsActivity extends AppCompatActivity {
 
         }
 
+    }
+
+
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        sessionManager = new SessionManager(this);
+        userDetails = sessionManager.getUserDetails();
+        // put your code here...
+        if(menu != null) {
+            int count = new OrgService().getCartItems(this);
+            ActionItemBadge actionItemBadge = new ActionItemBadge();
+            actionItemBadge.update(menu.findItem(R.id.item_samplebadge), count);
+
+        }
+
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        Intent intent = new Intent(this, CartActivity.class);
+        startActivity(intent);
+        return false;
     }
 }

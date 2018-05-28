@@ -21,6 +21,14 @@ public class Product {
     private float rating;
     private List<Product> productDetails;
     private String masterid;
+    private int quanity =1;
+
+    public Product(String id, int quanity){
+        this.id = id;
+        this.quanity = quanity;
+    }
+    public Product(){
+    }
 
     public String getMasterid() {
         return masterid;
@@ -178,5 +186,13 @@ public class Product {
 
     public void setOrgname(String orgname) {
         this.orgname = orgname;
+    }
+
+    public int getQuanity() {
+        return quanity;
+    }
+
+    public void setQuanity(int quanity) {
+        this.quanity = quanity;
     }
 }

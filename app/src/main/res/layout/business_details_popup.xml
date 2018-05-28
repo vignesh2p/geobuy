@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
     android:layout_width="350dp"
-    android:layout_height="450dp"
+    android:layout_height="350dp"
     android:layout_gravity="center"
     android:background="@color/primary_dark_bg"
     android:orientation="vertical"
@@ -123,7 +123,7 @@
         android:background="@drawable/buttonstyle"
         android:textColor="@color/white"/-->>
 
-    <LinearLayout
+    <!--<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
@@ -201,7 +201,7 @@
                 android:textColor="@color/white"
                 android:textSize="18sp" />
         </LinearLayout>
-    </LinearLayout>
+    </LinearLayout>-->
 
     <ScrollView
         android:layout_width="match_parent"
@@ -213,6 +213,7 @@
             android:orientation="vertical">
 
             <LinearLayout
+                android:layout_marginTop="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:orientation="horizontal"
@@ -229,6 +230,9 @@
                     android:layout_height="wrap_content"
                     android:paddingLeft="10dp"
                     android:text="50"
+                    android:autoLink="phone"
+                    android:textColorLink="@color/white"
+                    android:clickable="true"
                     android:textColor="@color/white"
                     android:textSize="20sp" />
             </LinearLayout>
@@ -255,6 +259,8 @@
                     android:layout_height="wrap_content"
                     android:paddingLeft="10dp"
                     android:text="50"
+                    android:autoLink = "email"
+                    android:textColorLink="@color/white"
                     android:textColor="@color/white"
                     android:textSize="20sp" />
             </LinearLayout>
@@ -269,6 +275,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
                 android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/selectedbutton"
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp"

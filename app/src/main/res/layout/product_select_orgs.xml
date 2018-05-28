@@ -54,6 +54,15 @@
                     android:text="Men's Fashion"
                     android:textSize="10dp" />
 
+                <TextView
+                    android:background="@drawable/textbox_bg"
+                    android:id="@+id/view_profile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="View Profile"
+                    android:textSize="10dp" />
+
 
             </LinearLayout>
 

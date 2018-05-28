@@ -74,6 +74,13 @@ public class ProductOrgsAdapter extends RecyclerView.Adapter<ProductOrgsAdapter.
             }
         });
 
+        holder.view_profile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                moveToOrgProfile(product.getOrgid());
+            }
+        });
+
         if(product.getOffer() != 0) {
             float discount = (Float.valueOf(product.getOffer()) /100) *product.getPrice();
             holder.product_price.setText("₹ "+(product.getPrice()-discount));
@@ -112,13 +119,14 @@ public class ProductOrgsAdapter extends RecyclerView.Adapter<ProductOrgsAdapter.
         CardView product_org_card;
         TextView product_org;
         TextView product_price;
+        TextView view_profile;
 
         public ProductOrgsHolder(View itemView) {
             super(itemView);
             product_org_card = itemView.findViewById(R.id.product_org_card);
             product_org = itemView.findViewById(R.id.product_org);
             product_price = itemView.findViewById(R.id.product_price);
-
+            view_profile = itemView.findViewById(R.id.view_profile);
         }
     }
 }

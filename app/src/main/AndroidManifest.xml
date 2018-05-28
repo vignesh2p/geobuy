@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="apps.codette.geobuy">
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
@@ -8,12 +9,16 @@
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
          Google Maps Android API v2, but you must specify either coarse or fine
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-feature android:name="android.hardware.location.gps" />
 
     <application
         android:allowBackup="true"
@@ -60,6 +65,14 @@
         <activity
             android:name=".BusinessActivity"
             android:label="@string/title_activity_business"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".CartActivity"
+            android:label="@string/title_activity_kart"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".SigninActivity"
+            android:label="@string/geobuy"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 

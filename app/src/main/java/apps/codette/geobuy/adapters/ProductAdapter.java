@@ -1,7 +1,6 @@
 package apps.codette.geobuy.adapters;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.CardView;
@@ -18,10 +17,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +25,6 @@ import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
 import apps.codette.geobuy.ProductDetailsActivity;
 import apps.codette.geobuy.R;
-import apps.codette.geobuy.SearchActivity;
-import apps.codette.geobuy.SearchResultActivity;
 
 /**
  * Created by user on 25-03-2018.
@@ -53,7 +47,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @Override
     public ProductViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(mCtx);
-        View view = inflater.inflate(R.layout.product_search, null);
+        View view = inflater.inflate(R.layout.product_item, null);
         return new ProductViewHolder(view);
     }
 
@@ -72,13 +66,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             holder.product_no_rating.setVisibility(View.VISIBLE);
         }
         Log.i("product", product.toString());
-        if(product.getProductDetails() != null) {
-            if (product.getProductDetails() != null && product.getProductDetails().size() > 0) {
+        if(product.getProductDetails() != null && product.getProductDetails().size() > 0) {
+            //if (product.getProductDetails() != null ) {
                 float discount = (Float.valueOf(product.getProductDetails().get(0).getOffer()) / 100) * product.getProductDetails().get(0).getPrice();
                 holder.productPrice.setText("₹ " + (product.getProductDetails().get(0).getPrice() - discount));
-            } else {
+            /*} else {
                 holder.productPrice.setText("₹ " + product.getProductDetails().get(0).getPrice());
-            }
+            }*/
             holder.preferred_org.setText(product.getProductDetails().get(0).getOrgname());
         } else {
             holder.productPrice.setText("₹ " + product.getPrice());

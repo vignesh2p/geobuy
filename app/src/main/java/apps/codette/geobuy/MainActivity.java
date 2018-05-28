@@ -1,6 +1,8 @@
 package apps.codette.geobuy;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -18,7 +20,11 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.mikepenz.actionitembadge.library.ActionItemBadge;
+import com.mikepenz.actionitembadge.library.utils.BadgeStyle;
+
+import apps.codette.geobuy.Constants.OrgService;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -42,6 +48,10 @@ public class MainActivity extends AppCompatActivity
 
     private int selectedPos;
 
+    MapFragment mapFragment;
+
+    Menu menu;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,6 +69,7 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
 
         manageBottomToolBar();
         setViewSelected(1);
@@ -140,7 +151,7 @@ public class MainActivity extends AppCompatActivity
                     hideView(welcomeBarLayout);
                     showView(appBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
-                    MapFragment mapFragment = new MapFragment();
+                    mapFragment = new MapFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, mapFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.nearby_primary);
                     nearByView.setImageDrawable(mIcon);
@@ -237,12 +248,24 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        this.menu = menu;
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        // Read your drawable from somewhere
+        Drawable dr = getResources().getDrawable(R.drawable.kart);
+        Bitmap bitmap = ((BitmapDrawable) dr).getBitmap();
+        // Scale it to 50 x 50
+        Drawable d = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, 75, 75, true));
+        // Set your new, scaled drawable "d"
+        BadgeStyle badgeStyle = ActionItemBadge.BadgeStyles.DARK_GREY.getStyle();
+        MenuItem menuItem = menu.findItem(R.id.item_samplebadge);
+        OrgService orgService = new OrgService();
+        int count = orgService.getCartItems(this);
+        ActionItemBadge.update(this, menuItem,  d, badgeStyle, count);
         return true;
     }
 
-    @Override
+    /*@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -255,7 +278,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
-    }
+    }*/
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -275,6 +298,9 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_send) {
 
+        } else if (id == R.id.item_samplebadge) {
+            Intent intent = new Intent(this, CartActivity.class);
+            startActivity(intent);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -282,6 +308,20 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.item_samplebadge: {
+                Intent intent = new Intent(this, CartActivity.class);
+                startActivity(intent);
+                return true;
+            }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     private void showView (View... views){
         for(View v: views){
@@ -294,6 +334,27 @@ public class MainActivity extends AppCompatActivity
         for(View v: views){
             v.setVisibility(View.GONE);
 
+        }
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1000){
+            mapFragment.onActivityResult(requestCode, resultCode, data);
+        }
+        else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        // put your code here...
+        if(menu != null) {
+            int count = new OrgService().getCartItems(this);
+            ActionItemBadge.update(menu.findItem(R.id.item_samplebadge), count);
         }
 
     }

@@ -1,7 +1,9 @@
 package apps.codette.geobuy;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -13,8 +15,11 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -29,6 +34,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -83,7 +89,8 @@ import me.relex.circleindicator.CircleIndicator;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements OnMapReadyCallback {
+public class MapFragment extends Fragment implements OnMapReadyCallback,
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -158,35 +165,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         view = inflater.inflate(apps.codette.geobuy.R.layout.fragment_map, container, false);
         sessionManager = new SessionManager(this.getContext());
         progressDialog = new ProgressDialog(this.getContext());
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER );
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progressDialog.setIndeterminate(true);
         progressDialog.setMessage("Loading");
         progressDialog.setCancelable(false);
         progressDialog.setCanceledOnTouchOutside(false);
-
-       /* filter_distance = view.findViewById(R.id.filter_distance);
-        filter_location = view.findViewById(R.id.filter_location);
-        filter_distance.setText(distance+" Km");
-        filter_location.setProgress(distance);*/
-
-        /*filter_location.setOnProgressChangeListener(new DiscreteSeekBar.OnProgressChangeListener() {
-            @Override
-            public void onProgressChanged(DiscreteSeekBar seekBar, int value, boolean fromUser) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(DiscreteSeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(DiscreteSeekBar seekBar) {
-                distance = seekBar.getProgress();
-                goToCurrentLocationInMap();
-                filter_distance.setText(distance+" Km");
-            }
-        });*/
 
         Switch map_view_switch = view.findViewById(R.id.map_view_switch);
         Switch map_view_active_switch = view.findViewById(R.id.map_view_active_switch);
@@ -194,7 +177,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         map_view_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b) {
+                if (b) {
                     compoundButton.setText("Map View");
                 } else {
                     compoundButton.setText("List View");
@@ -204,7 +187,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         map_view_active_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b) {
+                if (b) {
                     compoundButton.setText("Open Shops");
                 } else {
                     compoundButton.setText("Open / Closed");
@@ -215,18 +198,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(apps.codette.geobuy.R.id.nearby_map);
         mapFragment.getMapAsync(this);
         businessDetailsDialog = new Dialog(this.getContext());
-        //ShowPopup();
         return view;
     }
 
     public void ShowPopup(Marker marker) {
         LatLng latLng = marker.getPosition();
-        Log.i("latLng",latLng.latitude+"");
-        Log.i("latLng",latLng.longitude+"");
+        Log.i("latLng", latLng.latitude + "");
+        Log.i("latLng", latLng.longitude + "");
         TextView txtclose;
 
         businessDetailsDialog.setContentView(R.layout.business_details_popup);
-        txtclose =(TextView) businessDetailsDialog.findViewById(R.id.txtclose);
+        txtclose = (TextView) businessDetailsDialog.findViewById(R.id.txtclose);
         txtclose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -234,8 +216,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
         });
         businessDetailsDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        for(Organization org : organizations) {
-            if(org.getOrgLat() == latLng.latitude && latLng.longitude == org.getOrgLon()) {
+        for (Organization org : organizations) {
+            if (org.getOrgLat() == latLng.latitude && latLng.longitude == org.getOrgLon()) {
                 assignOrgDetails(org);
             }
         }
@@ -246,8 +228,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         TextView btv = businessDetailsDialog.findViewById(R.id.business_name);
         TextView bdtv = businessDetailsDialog.findViewById(R.id.business_detail);
-        TextView ftv = businessDetailsDialog.findViewById(R.id.followers_count);
-        TextView ptv = businessDetailsDialog.findViewById(R.id.products_count);
+        //TextView ftv = businessDetailsDialog.findViewById(R.id.followers_count);
+        //TextView ptv = businessDetailsDialog.findViewById(R.id.products_count);
         TextView etv = businessDetailsDialog.findViewById(R.id.business_email);
         TextView ntv = businessDetailsDialog.findViewById(R.id.business_phone);
         final Button btnfollow = businessDetailsDialog.findViewById(R.id.btnfollow);
@@ -262,33 +244,33 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         CircleIndicator indicator = (CircleIndicator) businessDetailsDialog.findViewById(R.id.indicator);
 
         ViewPager viewPager = (ViewPager) businessDetailsDialog.findViewById(R.id.business_view_pager);
-        String images [] = org.getImages();
-        if(images !=  null && images.length > 0) {
+        String images[] = org.getImages();
+        if (images != null && images.length > 0) {
             MyCustomPagerAdapter myCustomPagerAdapter = new MyCustomPagerAdapter(this.getActivity(), images);
             viewPager.setAdapter(myCustomPagerAdapter);
             indicator.setViewPager(viewPager);
         }
         bdtv.setText(org.getOrgaddress());
-        if(org.getProducts()!= null && org.getProducts().size()  > 0) {
+       /* if(org.getProducts()!= null && org.getProducts().size()  > 0) {
             ptv.setText(org.getProducts().size()+"");
         } else
             ptv.setText(0+"");
-
+        */
         String[] followers = org.getFollowers();
-        if(org.getFollowers() != null) {
-            ftv.setText(org.getFollowers().length+"");
+        if (org.getFollowers() != null) {
+            //ftv.setText(org.getFollowers().length+"");
 
-            Map<String, ?> userDetails =  sessionManager.getUserDetails();
+            Map<String, ?> userDetails = sessionManager.getUserDetails();
             String email = (String) userDetails.get("useremail");
             List<String> foll = Arrays.asList(followers);
-            if(foll.contains(email)) {
+            if (foll.contains(email)) {
                 btnfollow.setText("Following");
                 btnfollow.setTextColor(getResources().getColor(R.color.white));
                 btnfollow.setBackground(getResources().getDrawable(R.drawable.selectedbutton));
                 btnfollow.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        followOrg(org.getOrgid(), btnfollow,false);
+                        followOrg(org.getOrgid(), btnfollow, false);
                     }
                 });
             } else {
@@ -303,23 +285,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 });
             }
         } else {
-            ftv.setText(0 + "");
+            //ftv.setText(0 + "");
             btnfollow.setText("Follow");
             btnfollow.setTextColor(getResources().getColor(R.color.colorPrimary));
             btnfollow.setBackground(getResources().getDrawable(R.drawable.selected));
             btnfollow.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    followOrg(org.getOrgid(), btnfollow,true);
+                    followOrg(org.getOrgid(), btnfollow, true);
                 }
             });
         }
-        if(org.getOrgemail() != null)
+        if (org.getOrgemail() != null)
             etv.setText(org.getOrgemail());
         else
             etv.setText("-");
 
-        if(org.getOrgphoneno() != null)
+        if (org.getOrgphoneno() != null)
             ntv.setText(org.getOrgphoneno());
         else
             ntv.setText("-");
@@ -334,7 +316,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void followOrg(final String orgid, final Button btnfollow, final boolean follow) {
-        Map<String, ?> userDetails =  sessionManager.getUserDetails();
+        Map<String, ?> userDetails = sessionManager.getUserDetails();
         String email = (String) userDetails.get("useremail");
         RequestParams requestParams = new RequestParams();
         requestParams.put("orgid", orgid);
@@ -344,15 +326,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         RestCall.post("followOrg", requestParams, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                if(follow)
-                {
+                if (follow) {
                     btnfollow.setText("Following");
                     btnfollow.setTextColor(getResources().getColor(R.color.white));
                     btnfollow.setBackground(getResources().getDrawable(R.drawable.selectedbutton));
                     btnfollow.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            followOrg(orgid, btnfollow,false);
+                            followOrg(orgid, btnfollow, false);
                         }
                     });
                 } else {
@@ -362,7 +343,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     btnfollow.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            followOrg(orgid, btnfollow,true);
+                            followOrg(orgid, btnfollow, true);
                         }
                     });
                 }
@@ -385,12 +366,40 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-
     @Override
     public void onDetach() {
         super.onDetach();
         mListener = null;
     }
+
+    PendingResult<LocationSettingsResult> result;
+    final static int REQUEST_LOCATION = 1000;
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        nativeupdatePosition(location);
+    }
+
+    @Override
+    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String s) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String s) {
+
+    }
+
 
     /**
      * This interface must be implemented by activities that contain this
@@ -408,6 +417,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -444,49 +454,48 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                             android.Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_REQUEST_LOCATION);
         } else {
-            mMap.setMyLocationEnabled(true);
-            Log.e("DB", "PERMISSION GRANTED");
             requestToTurnOnGPS();
 
         }
-       /* if (ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    }
 
-            ActivityCompat.requestPermissions(this.getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        } else {
-            goToCurrentLocationInMap();
-        }*/
+    LocationManager locationManager;
+    // The minimum distance to change Updates in meters
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 meters
+
+    // The minimum time between updates in milliseconds
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
+
+    private void goToCurrentLocationInMap() {
+        try {
+            if (ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                return;
+            }
+
+        locationManager = (LocationManager) this.getContext().getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    MIN_TIME_BW_UPDATES,
+                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
-    private void goToCurrentLocationInMap() {
-
-        Location location = CClocation.getLocation(this.getContext(), this.getActivity());
-
-
-        if(location != null) {
-
+    public void nativeupdatePosition(Location location) {
+        if (location != null) {
             RequestParams params = new RequestParams();
             Number num = location.getLatitude();
-           /* params.put("maxlattitude", (Number)(location.getLatitude()+ (distance*0.0043352)));
-            params.put("maxlongitude",(Number)(location.getLongitude()+ (distance*0.0043352)));
-            params.put("minlattitude",(Number)(location.getLatitude() - (distance*0.0043352)));
-            params.put("minlongitude",(Number)(location.getLongitude() - (distance*0.0043352)));*/
-           /* LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-            platLngBounds = latLngBounds;
-            params.put("maxlattitude", latLngBounds.northeast.latitude);
-            params.put("maxlongitude",latLngBounds.northeast.longitude);
-            params.put("minlattitude",latLngBounds.southwest.latitude);
-            params.put("minlongitude",latLngBounds.southwest.longitude);
-            getOrgsByLocation(params);*/
-
             // Add a marker in Sydney and move the camera
             LatLng pos = new LatLng(location.getLatitude(), location.getLongitude());
             MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(pos);
             markerOptions.title("Your location");
             // Drawable dr = getResources().getDrawable(R.drawable.gpsl);
-            BitmapDrawable bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.gps);
+            BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.gps);
             Bitmap b = bitmapdraw.getBitmap();
             Bitmap smallMarker = Bitmap.createScaledBitmap(b, 85, 85, false);
 
@@ -494,12 +503,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             BitmapDescriptor d = BitmapDescriptorFactory.fromBitmap(smallMarker);
             markerOptions.icon(d);
             markerOptions.draggable(true);
-          //  mMap.addMarker(markerOptions);
+            //  mMap.addMarker(markerOptions);
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(pos)      // Sets the center of the map to Mountain View
                     .zoom(17)                   // Sets the zoom
-                   // .bearing(90)                // Sets the orientation of the camera to east
-                  //  .tilt(50)                   // Sets the tilt of the camera to 30 degrees
+                    // .bearing(90)                // Sets the orientation of the camera to east
+                    //  .tilt(50)                   // Sets the tilt of the camera to 30 degrees
                     .build();                   // Creates a CameraPosition from the builder
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
@@ -519,11 +528,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
                     RequestParams params = new RequestParams();
                     params.put("maxlattitude", latLngBounds.northeast.latitude);
-                    params.put("maxlongitude",latLngBounds.northeast.longitude);
-                    params.put("minlattitude",latLngBounds.southwest.latitude);
-                    params.put("minlongitude",latLngBounds.southwest.longitude);
-                    if(platLngBounds != null) {
-                        if(!platLngBounds.contains(new LatLng(latLngBounds.northeast.latitude, latLngBounds.southwest.longitude))){
+                    params.put("maxlongitude", latLngBounds.northeast.longitude);
+                    params.put("minlattitude", latLngBounds.southwest.latitude);
+                    params.put("minlongitude", latLngBounds.southwest.longitude);
+                    if (platLngBounds != null) {
+                        if (!platLngBounds.contains(new LatLng(latLngBounds.northeast.latitude, latLngBounds.southwest.longitude))) {
                             getOrgsByLocation(params);
                         }
                     } else {
@@ -532,20 +541,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     }
                 }
             });
-            /*mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
-                @Override
-                public void onCameraChange(CameraPosition cameraPosition) {
-                    LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-                    RequestParams params = new RequestParams();
-                    params.put("maxlattitude", latLngBounds.northeast.latitude);
-                    params.put("maxlongitude",latLngBounds.northeast.longitude);
-                    params.put("minlattitude",latLngBounds.southwest.latitude);
-                    params.put("minlongitude",latLngBounds.southwest.longitude);
-                    getOrgsByLocation(params);
-                }
-            });*/
         }
     }
+
 
     private void getOrgsByLocation(RequestParams params) {
        /* pd = new ProgressDialog(this.getContext());
@@ -576,16 +574,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             //toast("Success");
 
             JSONObject jsonObject = new JSONObject(jsonString);
-            Log.i("responseBody",jsonObject.get("data").toString());
+            Log.i("responseBody", jsonObject.get("data").toString());
             Gson gson = new Gson();
-            Type type = new TypeToken<List<Organization>>() {}.getType();
+            Type type = new TypeToken<List<Organization>>() {
+            }.getType();
             organizations = gson.fromJson(jsonObject.get("data").toString(), type);
-            if(organizations != null && !organizations.isEmpty()) {
+            if (organizations != null && !organizations.isEmpty()) {
                 GeobuyConstants.NEAR_BY_ORGS = organizations;
-                for(Organization organization : organizations) {
+                for (Organization organization : organizations) {
                     MarkerOptions markerOptions = new MarkerOptions();
                     LatLng latLng = new LatLng(organization.getOrgLat(), organization.getOrgLon());
-                    BitmapDrawable bitmapdraw =(BitmapDrawable)getResources().getDrawable(R.drawable.store);
+                    BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.store);
                     Bitmap b = bitmapdraw.getBitmap();
                     Bitmap smallMarker = Bitmap.createScaledBitmap(b, 50, 50, false);
                     markerOptions.position(latLng);
@@ -600,11 +599,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             } else {
                 toast("No Sellers found in nearby areas");
             }
-           // pd.hide();
+            // pd.hide();
         } catch (Exception ex) {
             ex.printStackTrace();
-           // pd.hide();
-            toast("Failure :: "+ex.getMessage());
+            // pd.hide();
+            toast("Failure :: " + ex.getMessage());
         }
 
     }
@@ -616,9 +615,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,  int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
-        Log.i("requestCode", ""+requestCode);
+        Log.i("requestCode", "" + requestCode);
         //Checking the request code of our request
         if (requestCode == ACESS_FINE_LOCATION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -631,9 +630,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
+    private void requestToTurnOnGPS() {
 
 
-    private void requestToTurnOnGPS (){
+        if (ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                   return;
+        }
+        mMap.setMyLocationEnabled(true);
 
         GoogleApiClient googleApiClient = new GoogleApiClient.Builder(this.getContext())
                 .addApi(LocationServices.API)
@@ -660,11 +663,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             public void onResult(@NonNull LocationSettingsResult result) {
                 final Status status = result.getStatus();
 //                final LocationSettingsStates state = result.getLocationSettingsStates();
-
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         goToCurrentLocationInMap();
-
                         break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
@@ -691,6 +692,32 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
 
     private void toast(String s) {
-        Toast.makeText(this.getContext(), ""+s, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this.getContext(), "" + s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_LOCATION:
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        // All required changes were successfully made
+                        requestToTurnOnGPS ();
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED:
+                    {
+                        // The user was asked to change settings, but chose not to
+                        Toast.makeText(getActivity(), "Location not enabled", Toast.LENGTH_LONG).show();
+                        break;
+                    }
+                    default:
+                    {
+                        break;
+                    }
+                }
+                break;
+        }
+
     }
 }

@@ -24,7 +24,7 @@ import android.app.Service;
 import android.os.IBinder;
 
 
-public class CClocation implements LocationListener {
+public abstract class CClocation implements LocationListener {
 
     Context ctx;
 
@@ -39,7 +39,7 @@ public class CClocation implements LocationListener {
     public void onLocationChanged(Location loc) {
         Log.d("activity", "RLOC: onLocationChanged");
         location = loc;
-        invokeNativeCode();
+        invokeNativeCode(loc);
 
     }
 
@@ -59,11 +59,14 @@ public class CClocation implements LocationListener {
             return;
         }
         Location location = locManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        double latitude = 0;
-        double longitude = 0;
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
-        Log.d("activity", "RLOC: onProviderEnabled " + latitude + " " + longitude);
+        if(location != null) {
+            double latitude = 0;
+            double longitude = 0;
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+            Log.d("activity", "RLOC: onProviderEnabled " + latitude + " " + longitude);
+        }
+
     }
 
     @Override
@@ -124,8 +127,9 @@ public class CClocation implements LocationListener {
 
             // getting network status
             isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-           // Toast.makeText(this.ctx, "isGPSEnabled :: "+isGPSEnabled+"  isNetworkEnabled "+isNetworkEnabled, Toast.LENGTH_LONG).show();
-
+            Toast.makeText(this.ctx, "isGPSEnabled :: "+isGPSEnabled+"  isNetworkEnabled "+isNetworkEnabled, Toast.LENGTH_SHORT).show();
+            Log.i("d" , "isGPSEnabled "+isGPSEnabled);
+            Log.i("d" , "isNetworkEnabled "+isNetworkEnabled);
             if (!isGPSEnabled && !isNetworkEnabled) {
                 ActivityCompat.requestPermissions(this.activity,new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             } else {
@@ -170,16 +174,49 @@ public class CClocation implements LocationListener {
                             location = locationManager
                                     .getLastKnownLocation(LocationManager.GPS_PROVIDER);
                             if (location != null) {
+                               // Toast.makeText(this.ctx, "getLastKnownLocation :: "+location, Toast.LENGTH_SHORT).show();
                                 Log.d("activity", "RLOC: loc by GPS");
-
+                                nativeupdatePosition(location);
                                 latitude = location.getLatitude();
                                 longitude = location.getLongitude();
-                             //   Toast.makeText(this.ctx, "longitude latitude"+latitude+" :: "+longitude, Toast.LENGTH_LONG).show();
+                                Toast.makeText(this.ctx, "longitude latitude"+latitude+" :: "+longitude, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this.ctx, "location is null", Toast.LENGTH_SHORT).show();
                             }
                         }
                     }
                 } else {
                     ActivityCompat.requestPermissions(this.activity, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                }
+
+
+                // First get location from Network Provider
+                if (isNetworkEnabled) {
+                    if (location == null) {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.NETWORK_PROVIDER,
+                                MIN_TIME_BW_UPDATES,
+                                MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+
+                        Log.d("Network", "Network");
+
+                        if (locationManager != null) {
+                            location = locationManager
+                                    .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                            if (location != null) {
+                                nativeupdatePosition(location);
+                                // Toast.makeText(this.ctx, "getLastKnownLocation :: "+location, Toast.LENGTH_SHORT).show();
+                                Log.d("activity", "RLOC: loc by GPS");
+
+                                latitude = location.getLatitude();
+                                longitude = location.getLongitude();
+                                Toast.makeText(this.ctx, "longitude latitude"+latitude+" :: "+longitude, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this.ctx, "location is null", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -199,17 +236,18 @@ public class CClocation implements LocationListener {
     {
         Log.d("activity", "getLocation");
         setContext(ctx);
-        truc = new CClocation(ctx, activity);
+        //truc = new CClocation(ctx, activity);
 
         return truc.getLocation2();
    }
 
-    //public void nativeupdatePosition(double a, double b);
+    public abstract void nativeupdatePosition(Location loc);
 
-    public void invokeNativeCode() {
+    public void invokeNativeCode(Location loc) {
         latitude = location.getLatitude();
         longitude = location.getLongitude();
-      //  nativeupdatePosition(latitude,longitude);
+        Toast.makeText(this.ctx, "invokeNativeCode latitude"+latitude+" :: "+longitude, Toast.LENGTH_SHORT).show();
+        nativeupdatePosition(loc);
     }
 
 }

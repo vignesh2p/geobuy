@@ -1,7 +1,11 @@
 package apps.codette.geobuy;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +21,15 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -55,6 +68,9 @@ public class SearchActivity extends AppCompatActivity {
     List<Organization> organizations;
 
     int distance = 0;
+
+    final static int REQUEST_LOCATION = 1000;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,24 +192,47 @@ public class SearchActivity extends AppCompatActivity {
                 params.put("maxlongitude", (Number) (location.getLongitude() + (distance * 0.0043352)));
                 params.put("minlattitude", (Number) (location.getLatitude() - (distance * 0.0043352)));
                 params.put("minlongitude", (Number) (location.getLongitude() - (distance * 0.0043352)));
+                RestCall.post("orgsSearch", params, new AsyncHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                        Log.i("orgsSearch responseBody",new String(responseBody));
+                        Gson gson = new Gson();
+                        Type type = new TypeToken<List<Organization>>() {}.getType();
+                        organizations = gson.fromJson(new String(responseBody), type);
+                        formOrgs(organizations);
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                        toast(getResources().getString(R.string.try_later));
+                    }
+                });
+            } else{
+               // requestToTurnOnGPS(text);
             }
+        } else {
+            RestCall.post("orgsSearch", params, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    Log.i("orgsSearch responseBody", new String(responseBody));
+                    Gson gson = new Gson();
+                    Type type = new TypeToken<List<Organization>>() {
+                    }.getType();
+                    organizations = gson.fromJson(new String(responseBody), type);
+                    formOrgs(organizations);
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    toast(getResources().getString(R.string.try_later));
+                }
+            });
         }
-        RestCall.post("orgsSearch", params, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                Log.i("orgsSearch responseBody",new String(responseBody));
-                Gson gson = new Gson();
-                Type type = new TypeToken<List<Organization>>() {}.getType();
-                organizations = gson.fromJson(new String(responseBody), type);
-                formOrgs(organizations);
-            }
+    }
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                toast(getResources().getString(R.string.try_later));
-            }
-        });
 
+    private void getS(Status status) throws IntentSender.SendIntentException {
+        status.startResolutionForResult(this, 1000);
     }
 
     private void getProducts(String text) {
@@ -357,6 +396,35 @@ public class SearchActivity extends AppCompatActivity {
         for(View v: views){
             v.setVisibility(View.GONE);
 
+        }
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        toast(resultCode + "");
+        switch (requestCode) {
+            case REQUEST_LOCATION:
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        // All required changes were successfully made
+                        Toast.makeText(this, "Location enabled by user!", Toast.LENGTH_LONG).show();
+
+                        //requestToTurnOnGPS ();
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED:
+                    {
+                        // The user was asked to change settings, but chose not to
+                        Toast.makeText(this, "Location not enabled, user cancelled.", Toast.LENGTH_LONG).show();
+                        break;
+                    }
+                    default:
+                    {
+                        break;
+                    }
+                }
+                break;
         }
 
     }

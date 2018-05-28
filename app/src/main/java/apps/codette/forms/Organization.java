@@ -21,6 +21,17 @@ public class Organization implements Serializable{
     private String orgaddress;
     private String[] images;
     private String logo;
+    private List<Review> reviews;
+    private float rating;
+
+
+    public float getRating() {
+        return rating;
+    }
+
+    public void setRating(float ratings) {
+        this.rating = ratings;
+    }
 
     public Organization (String orgname, String[] images){
         this.orgname = orgname;
@@ -146,5 +157,13 @@ public class Organization implements Serializable{
                 ", isPrime=" + isPrime +
                 ", category='" + category + '\'' +
                 '}';
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
     }
 }

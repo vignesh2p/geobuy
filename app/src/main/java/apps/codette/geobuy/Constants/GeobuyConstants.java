@@ -13,6 +13,7 @@ public class GeobuyConstants {
     public static List<Organization> NEAR_BY_ORGS = null;
 
     public static String ORG_PRODUCTS_TABLE ="organization-products";
+    public static String ORG_TABLE ="organization";
 
 
 }

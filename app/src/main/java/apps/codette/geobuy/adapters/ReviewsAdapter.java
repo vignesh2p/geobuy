@@ -38,13 +38,14 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHo
     @Override
     public void onBindViewHolder(ReviewsAdapter.ReviewHolder holder, int position) {
         Review review = reviews.get(position);
-        if(review.getRatings() < 2) {
-            holder.product_review_layout.setBackgroundColor(Color.RED);
-        } else if (review.getRatings() > 2 && review.getRatings() < 3.5) {
-            holder.product_review_layout.setBackgroundColor(Color.YELLOW);
+        if(review.getRatings() <= 2) {
+            holder.product_review_layout.setBackgroundColor(mCtx.getResources().getColor(R.color.darkRed));
+        } else if (review.getRatings() >= 3.5) {
+            holder.product_review_layout.setBackgroundColor(mCtx.getResources().getColor(R.color.darkGreen));
         } else  {
-            holder.product_review_layout.setBackgroundColor(Color.GREEN);
+            holder.product_review_layout.setBackgroundColor(mCtx.getResources().getColor(R.color.darkYellow));
         }
+        holder.product_rating.setTextColor(mCtx.getResources().getColor(R.color.white));
         holder.product_rating.setText(review.getRatings()+"");
         holder.product_review.setText(review.getHeading());
         holder.product_review_comment.setText(review.getReview());
@@ -59,7 +60,10 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHo
 
     @Override
     public int getItemCount() {
-        return reviews.size();
+        if(reviews != null)
+            return reviews.size();
+        else
+            return 0;
     }
 
     class ReviewHolder extends RecyclerView.ViewHolder {

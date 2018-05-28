@@ -51,5 +51,9 @@ dependencies {
     compile 'de.hdodenhof:circleimageview:2.2.0'
     compile 'org.adw.library:discrete-seekbar:1.0.1'
     compile 'me.relex:circleindicator:1.2.2@aar'
+    //TExt in app bar icon
+    implementation 'com.mikepenz:actionitembadge:3.3.2@aar'
+    implementation 'com.mikepenz:iconics-core:3.0.3@aar'
+
 }
 apply plugin: 'com.google.gms.google-services'
