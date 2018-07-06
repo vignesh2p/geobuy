@@ -153,4 +153,15 @@
     <string name="title_activity_signin">SigninActivity</string>
     <string name="geobuy">Geobuy</string>
     <string name="continue_b">Continue</string>
+    <string name="title_activity_address">Address</string>
+    <string name="title_activity_order_confirmation">Order Confirmation</string>
+    <string name="title_activity_order_details">Orders</string>
+    <string name="title_activity_address_list_acitivty">Address</string>
+    <string name="title_activity_payment_gateway">PaymentGatewayActivity</string>
+    <string name="title_activity_payment">Pay</string>
+    <string name="title_activity_notification">NotificationActivity</string>
+    <string name="more_info">More Info</string>
+    <string name="title_activity_order_success">OrderSuccessActivity</string>
+    <string name="payment_cancelled">Payment Cancelled | Failed.</string>
+    <string name="title_activity_order_detail">Order Details</string>
 </resources>

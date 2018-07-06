@@ -8,7 +8,7 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:background="@color/primaryColorBlack"
-        android:gravity="center_horizontal"
+        android:gravity="right"
         android:orientation="horizontal"
         android:padding="5dp">
 
@@ -31,14 +31,14 @@
         android:tag="@string/app_name"
         />-->
 
-        <Switch
+       <!-- <Switch
             android:id="@+id/map_view_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="@color/white"
             android:text="Map View"
             android:textColor="@color/white"
-            android:textIsSelectable="true" />
+            android:textIsSelectable="true" />-->
         <Switch
             android:layout_marginLeft="20dp"
             android:id="@+id/map_view_active_switch"
@@ -51,11 +51,11 @@
 
     </LinearLayout>
 
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
 
-    android:id="@+id/nearby_map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    />
-</LinearLayout>
+        android:id="@+id/nearby_map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+    </LinearLayout>

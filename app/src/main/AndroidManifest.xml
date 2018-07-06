@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.READ_PROFILE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
@@ -26,7 +29,8 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/logo"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:replace="android:icon">
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -73,6 +77,58 @@
         <activity
             android:name=".SigninActivity"
             android:label="@string/geobuy"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".AddressActivity"
+            android:label="@string/title_activity_address"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".OrderConfirmationActivity"
+            android:label="@string/title_activity_order_confirmation"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".OrderDetailsActivity"
+            android:label="@string/title_activity_order_details"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".AddressListAcitivty"
+            android:label="@string/title_activity_address_list_acitivty"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <!-- activity declaration -->
+        <!-- activity declaration -->
+
+        <activity
+            android:name=".PayActivity"
+            android:label="@string/title_activity_payment" />
+        <activity
+            android:name=".NotificationActivity"
+            android:label="@string/title_activity_notification"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <service android:name=".service.MyFirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".service.MyFirebaseInstanceIDService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        /**
+        * Add your API key
+        */
+        <meta-data
+            android:name="com.razorpay.ApiKey"
+            android:value="rzp_test_Jxn6hzKiRtQjak" />
+
+        <activity
+            android:name=".OrderSuccessActivity"
+            android:label="@string/title_activity_order_success"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".OrderDetailActivity"
+            android:label="@string/title_activity_order_detail"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 

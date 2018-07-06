@@ -66,6 +66,8 @@ public class CategoryFragment extends Fragment {
 
     List<Category> categories = null;
 
+    MainActivity mainActivity;
+
     public CategoryFragment() {
     }
 
@@ -100,6 +102,8 @@ public class CategoryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        mainActivity = (MainActivity) this.getActivity();
+        mainActivity.setModule("CATEGORYFRAGMENT");
         View view = inflater.inflate(R.layout.fragment_category, container, false);
         recyclerView = view.findViewById(R.id.category_card_view);
        // gridView.setItemAnimator(new DefaultItemAnimator());
@@ -112,13 +116,18 @@ public class CategoryFragment extends Fragment {
         pd.setCancelable(false);
         pd.setCanceledOnTouchOutside(false);
         pd.show();
+        getCategoryFromDB();
+        return view;
+    }
 
-
-        RestCall.get("categories", new RequestParams(), new AsyncHttpResponseHandler() {
+    private void getCategoryFromDB() {
+        RequestParams requestParams = new RequestParams();
+        //requestParams.put("isBanner", false);
+        RestCall.get("categories", requestParams, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 getCategory(new String(responseBody));
-               // pd.dismiss();
+                // pd.dismiss();
             }
 
             @Override
@@ -128,11 +137,11 @@ public class CategoryFragment extends Fragment {
                 toast(getResources().getString(R.string.try_later));
             }
         });
-        return view;
     }
 
     private void toast(String msg) {
-        Toast.makeText(this.getContext(), msg, Toast.LENGTH_SHORT).show();
+        if(mainActivity.getModule().equalsIgnoreCase("CATEGORYFRAGMENT"))
+            Toast.makeText(this.getContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
     private void formUiforCategory(String categoryJson) {
@@ -163,7 +172,6 @@ public class CategoryFragment extends Fragment {
             Gson gson = new Gson();
             Type type = new TypeToken<List<Category>>() {}.getType();
             categories  = gson.fromJson(jsonObject.get("data").toString(), type);
-
         } catch (JSONException e) {
             e.printStackTrace();
             if(pd != null)

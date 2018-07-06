@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 import apps.codette.forms.Product;
@@ -59,7 +60,9 @@ public class SearchTextProductAdapter extends RecyclerView.Adapter<SearchTextPro
         Intent intent = new Intent(mCtx, SearchResultActivity.class);
         Gson gson = new Gson();
         Type type = new TypeToken<List<Product>>() {}.getType();
-        String json = gson.toJson(products, type);
+        List<Product> prods = new ArrayList<Product>();
+        prods.add(product);
+        String json = gson.toJson(prods, type);
         intent.putExtra("products", json);
         mCtx.startActivity(intent);
 

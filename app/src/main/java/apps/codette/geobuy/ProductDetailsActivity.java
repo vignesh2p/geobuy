@@ -13,6 +13,10 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -50,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import apps.codette.ProductReviewsFragment;
 import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
 import apps.codette.forms.Rating;
@@ -74,6 +79,8 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
     SessionManager sessionManager;
     Menu menu;
     Map<String, ?> userDetails;
+    String highLightsJson;
+    String reviewsJson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +101,8 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
 
         Intent intent = getIntent();
         final String productId = intent.getStringExtra("productId");
-        getProductDetails(productId, null);
+        final String orgId = intent.getStringExtra("orgId");
+        getProductDetails(productId, orgId);
 
     }
 
@@ -152,25 +160,25 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
     }
 
     private void manageAllTextViews(Product product) {
-        TextView product_rating = (TextView) findViewById(R.id.product_rating_text);
-        TextView product_rating_review = (TextView) findViewById(R.id.product_rating_reviews);
+       // TextView product_rating = (TextView) findViewById(R.id.product_rating_text);
+       // TextView product_rating_review = (TextView) findViewById(R.id.product_rating_reviews);
         TextView product_tittlr = (TextView) findViewById(R.id.product_tittle);
         TextView product_price_amount = (TextView) findViewById(R.id.product_price_amount);
         TextView product_offer = (TextView) findViewById(R.id.product_offer);
         TextView product_price_old = (TextView) findViewById(R.id.product_price_old);
         TextView product_total_rating = (TextView) findViewById(R.id.product_total_rating);
-        TextView no_of_ratings = (TextView) findViewById(R.id.no_of_ratings);
+      //  TextView no_of_ratings = (TextView) findViewById(R.id.no_of_ratings);
         product_price_old.setPaintFlags(product_price_old.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         List<Rating> ratings = product.getRatings();
         float rating = product.getRating();
         String ratingReviews ="";
         product_total_rating.setText(""+rating);
-        product_rating.setText(""+rating);
+    //    product_rating.setText(""+rating);
         if(ratings != null && !ratings.isEmpty()) {
-            no_of_ratings.setText(ratings.size()+" ratings");
+          //  no_of_ratings.setText(ratings.size()+" ratings");
             ratingReviews = ratingReviews +ratings.size()+" ratings";
         } else {
-            no_of_ratings.setText(0 +" ratings");
+         //   no_of_ratings.setText(0 +" ratings");
             ratingReviews = ratingReviews + "0 ratings";
         }
         if(product.getReviews() != null && !product.getReviews().isEmpty()) {
@@ -189,7 +197,7 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
             product_offer.setText("");
         }
         product_tittlr.setText(product.getTitle());
-        product_rating_review.setText(ratingReviews);
+     //   product_rating_review.setText(ratingReviews);
     }
 
     public void getProductDetails(final String productId,final String orgId) {
@@ -238,7 +246,7 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
         formReviews(productDetail.getReviews());
         formImages(productDetail.getImage());
         formProductOrgs(product.getProductDetails(),productDetail.getOrgid());
-        manageRateAndReview(productDetail.getId(), productDetail.getOrgid(), productDetail.getReviews());
+      //  manageRateAndReview(productDetail.getId(), productDetail.getOrgid(), productDetail.getReviews());
         manageAllTextViews(productDetail);
         pd.dismiss();
         add_to_cart = findViewById(R.id.add_to_cart);
@@ -248,6 +256,7 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
                 moveProductToCart(productDetail);
             }
         });
+        assignTabLayout();
     }
 
     private void formProductOrgs(List<Product> productDetails, String orgId) {
@@ -378,8 +387,12 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
         });
     }
 
+
     private void formReviews(List<Review> reviews) {
-        RecyclerView rv = (RecyclerView) findViewById(R.id.product_reviews_recyclerview);
+        if(reviews != null) {
+            reviewsJson = new Gson().toJson(reviews);
+        }
+        /*RecyclerView rv = (RecyclerView) findViewById(R.id.product_reviews_recyclerview);
         if(reviews != null) {
             ReviewsAdapter adapter = new ReviewsAdapter(this, reviews);
             LinearLayoutManager linearLayoutManager  = new LinearLayoutManager(this);
@@ -387,11 +400,14 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
             rv.setAdapter(adapter);
           //  rv.setNestedScrollingEnabled(false);
         } else
-            hideView(rv);
+            hideView(rv);*/
 
     }
 
     private void formProductHighLights(List<String> highLights) {
+        Gson json = new Gson();
+        highLightsJson = json.toJson(highLights);
+        /*
         LinearLayout ll = findViewById(R.id.products_highlight_layout);
         RecyclerView rv = (RecyclerView) findViewById(R.id.product_highlights_recyclerview);
         if(highLights != null) {
@@ -404,7 +420,7 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
             hideView(ll);
         }
         ScrollView scrollView = findViewById(R.id.scrollView);
-        scrollView.fullScroll(ScrollView.FOCUS_UP);
+        scrollView.fullScroll(ScrollView.FOCUS_UP);*/
         //rv.setNestedScrollingEnabled(false);
     }
 
@@ -445,7 +461,6 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
             v.setVisibility(View.GONE);
 
         }
-
     }
 
 
@@ -471,4 +486,72 @@ public class ProductDetailsActivity extends AppCompatActivity  implements MenuIt
         startActivity(intent);
         return false;
     }
+
+    private SectionsPagerAdapter  mSectionsPagerAdapter;
+
+    /**
+     * The {@link ViewPager} that will host the section contents.
+     */
+    private ViewPager mViewPager;
+    private void assignTabLayout() {
+        // Create the adapter that will return a fragment for each of the three
+        // primary sections of the activity.
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+
+        // Set up the ViewPager with the sections adapter.
+        mViewPager = (ViewPager) findViewById(R.id.container);
+
+
+        mViewPager.setAdapter(mSectionsPagerAdapter);
+
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+
+        mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+    }
+
+    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+
+        public SectionsPagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            // getItem is called to instantiate the fragment for the given page.
+            // Return a PlaceholderFragment (defined as a static inner class below).
+            Log.i("sectionNumber",position + 1+"");
+            position = position+1;
+            Fragment fragment;
+            if(position == 1) {
+                ProductHighlights productHighlights = new ProductHighlights();
+                Bundle bundle = new Bundle();
+                bundle.putString("highlights", highLightsJson);
+                productHighlights.setArguments(bundle);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                //setting margins around imageimageview
+                params.height=300; //left, top, right, bottom
+                mViewPager.setLayoutParams(params);
+                return productHighlights;
+            } else if(position == 2) {
+                ProductReviewsFragment productReviewsFragment = new ProductReviewsFragment();
+                Bundle bundle = new Bundle();
+                bundle.putString("reviews", reviewsJson);
+                productReviewsFragment.setArguments(bundle);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                //setting margins around imageimageview
+                params.height=500; //left, top, right, bottom
+                mViewPager.setLayoutParams(params);
+                return productReviewsFragment;
+            }
+            return null;
+        }
+
+        @Override
+        public int getCount() {
+            // Show 3 total pages.
+            return 2;
+        }
+    }
+
 }

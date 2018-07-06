@@ -123,8 +123,8 @@
         android:layout_height="wrap_content">
 
         <LinearLayout
-            android:layout_width="220dp"
-            android:layout_height="218dp"
+            android:layout_width="120dp"
+            android:layout_height="118dp"
             android:layout_marginTop="10dp"
             android:background="@drawable/empty_cart_sad"></LinearLayout>
 
@@ -135,7 +135,7 @@
             android:layout_marginTop="20dp"
             android:text=""
             android:textColor="@color/black_overlay"
-            android:textSize="20sp"
+            android:textSize="16sp"
              />
 
     </LinearLayout>

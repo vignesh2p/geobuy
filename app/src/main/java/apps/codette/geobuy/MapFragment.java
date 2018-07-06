@@ -125,6 +125,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     ProgressDialog progressDialog;
 
+    MainActivity mainActivity;
+
     public MapFragment() {
         // Required empty public constructor
 
@@ -161,6 +163,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        mainActivity = (MainActivity) this.getActivity();
+        mainActivity.setModule("MAPFRAGMENT");
         View view = null;
         view = inflater.inflate(apps.codette.geobuy.R.layout.fragment_map, container, false);
         sessionManager = new SessionManager(this.getContext());
@@ -170,9 +174,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         progressDialog.setMessage("Loading");
         progressDialog.setCancelable(false);
         progressDialog.setCanceledOnTouchOutside(false);
-
-        Switch map_view_switch = view.findViewById(R.id.map_view_switch);
         Switch map_view_active_switch = view.findViewById(R.id.map_view_active_switch);
+        /*Switch map_view_switch = view.findViewById(R.id.map_view_switch);
+
         map_view_switch.setChecked(true);
         map_view_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -183,7 +187,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                     compoundButton.setText("List View");
                 }
             }
-        });
+        });*/
         map_view_active_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
@@ -232,7 +236,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         //TextView ptv = businessDetailsDialog.findViewById(R.id.products_count);
         TextView etv = businessDetailsDialog.findViewById(R.id.business_email);
         TextView ntv = businessDetailsDialog.findViewById(R.id.business_phone);
-        final Button btnfollow = businessDetailsDialog.findViewById(R.id.btnfollow);
+        //final Button btnfollow = businessDetailsDialog.findViewById(R.id.btnfollow);
         Button org_view_profile = businessDetailsDialog.findViewById(R.id.org_view_profile);
         org_view_profile.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -256,7 +260,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         } else
             ptv.setText(0+"");
         */
-        String[] followers = org.getFollowers();
+       /* String[] followers = org.getFollowers();
         if (org.getFollowers() != null) {
             //ftv.setText(org.getFollowers().length+"");
 
@@ -295,7 +299,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                     followOrg(org.getOrgid(), btnfollow, true);
                 }
             });
-        }
+        }*/
         if (org.getOrgemail() != null)
             etv.setText(org.getOrgemail());
         else
@@ -373,7 +377,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     }
 
     PendingResult<LocationSettingsResult> result;
-    final static int REQUEST_LOCATION = 1000;
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -461,10 +464,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     LocationManager locationManager;
     // The minimum distance to change Updates in meters
-    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 meters
 
-    // The minimum time between updates in milliseconds
-    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
 
     private void goToCurrentLocationInMap() {
         try {
@@ -476,8 +476,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         locationManager = (LocationManager) this.getContext().getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(
                     LocationManager.NETWORK_PROVIDER,
-                    MIN_TIME_BW_UPDATES,
-                    MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+                    GeobuyConstants.MIN_TIME_BW_UPDATES,
+                GeobuyConstants.MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -495,52 +495,55 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             markerOptions.position(pos);
             markerOptions.title("Your location");
             // Drawable dr = getResources().getDrawable(R.drawable.gpsl);
-            BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.gps);
-            Bitmap b = bitmapdraw.getBitmap();
-            Bitmap smallMarker = Bitmap.createScaledBitmap(b, 85, 85, false);
+            if(isCurrentFragment()) {
+                BitmapDrawable bitmapdraw = (BitmapDrawable) getResources().getDrawable(R.drawable.gps);
+                Bitmap b = bitmapdraw.getBitmap();
+                Bitmap smallMarker = Bitmap.createScaledBitmap(b, 85, 85, false);
 
-            //  BitmapDescriptor d = BitmapDescriptorFactory.fromResource(R.drawable.gps);
-            BitmapDescriptor d = BitmapDescriptorFactory.fromBitmap(smallMarker);
-            markerOptions.icon(d);
-            markerOptions.draggable(true);
-            //  mMap.addMarker(markerOptions);
-            CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(pos)      // Sets the center of the map to Mountain View
-                    .zoom(17)                   // Sets the zoom
-                    // .bearing(90)                // Sets the orientation of the camera to east
-                    //  .tilt(50)                   // Sets the tilt of the camera to 30 degrees
-                    .build();                   // Creates a CameraPosition from the builder
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                //  BitmapDescriptor d = BitmapDescriptorFactory.fromResource(R.drawable.gps);
+                BitmapDescriptor d = BitmapDescriptorFactory.fromBitmap(smallMarker);
+                markerOptions.icon(d);
+                markerOptions.draggable(true);
+                //  mMap.addMarker(markerOptions);
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(pos)      // Sets the center of the map to Mountain View
+                        .zoom(17)                   // Sets the zoom
+                        // .bearing(90)                // Sets the orientation of the camera to east
+                        //  .tilt(50)                   // Sets the tilt of the camera to 30 degrees
+                        .build();                   // Creates a CameraPosition from the builder
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
-            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
 
-                @Override
-                public boolean onMarkerClick(Marker marker) {
+                    @Override
+                    public boolean onMarkerClick(Marker marker) {
 
-                    ShowPopup(marker);
-                    return true;
-                }
-            });
+                        ShowPopup(marker);
+                        return true;
+                    }
+                });
 
-            mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
-                @Override
-                public void onCameraIdle() {
-                    LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-                    RequestParams params = new RequestParams();
-                    params.put("maxlattitude", latLngBounds.northeast.latitude);
-                    params.put("maxlongitude", latLngBounds.northeast.longitude);
-                    params.put("minlattitude", latLngBounds.southwest.latitude);
-                    params.put("minlongitude", latLngBounds.southwest.longitude);
-                    if (platLngBounds != null) {
-                        if (!platLngBounds.contains(new LatLng(latLngBounds.northeast.latitude, latLngBounds.southwest.longitude))) {
+                mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
+                    @Override
+                    public void onCameraIdle() {
+                        LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+                        RequestParams params = new RequestParams();
+                        params.put("maxlattitude", latLngBounds.northeast.latitude);
+                        params.put("maxlongitude", latLngBounds.northeast.longitude);
+                        params.put("minlattitude", latLngBounds.southwest.latitude);
+                        params.put("minlongitude", latLngBounds.southwest.longitude);
+                        if (platLngBounds != null) {
+                            if (!platLngBounds.contains(new LatLng(latLngBounds.northeast.latitude, latLngBounds.southwest.longitude))) {
+                                getOrgsByLocation(params);
+                            }
+                        } else {
+                            platLngBounds = latLngBounds;
                             getOrgsByLocation(params);
                         }
-                    } else {
-                        platLngBounds = latLngBounds;
-                        getOrgsByLocation(params);
                     }
-                }
-            });
+                });
+            }
+
         }
     }
 
@@ -647,8 +650,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
         LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(5 * 1000);
-        locationRequest.setFastestInterval(2 * 1000);
+       // locationRequest.setInterval(5 * 1000);
+       // locationRequest.setFastestInterval(2 * 1000);
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(locationRequest);
 
@@ -687,18 +690,19 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     }
 
     private void getS(Status status) throws IntentSender.SendIntentException {
-        status.startResolutionForResult(this.getActivity(), 1000);
+        status.startResolutionForResult(this.getActivity(), GeobuyConstants.REQUEST_LOCATION);
     }
 
 
     private void toast(String s) {
-        Toast.makeText(this.getContext(), "" + s, Toast.LENGTH_SHORT).show();
+        if(mainActivity.getModule().equalsIgnoreCase("MAPFRAGMENT"))
+            Toast.makeText(this.getContext(), "" + s, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_LOCATION:
+            case GeobuyConstants.REQUEST_LOCATION:
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made
@@ -708,7 +712,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                     case Activity.RESULT_CANCELED:
                     {
                         // The user was asked to change settings, but chose not to
-                        Toast.makeText(getActivity(), "Location not enabled", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getActivity(), "Location not enabled", Toast.LENGTH_SHORT).show();
                         break;
                     }
                     default:
@@ -719,5 +723,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 break;
         }
 
+    }
+    private boolean isCurrentFragment(){
+        return mainActivity.getModule().equalsIgnoreCase("MAPFRAGMENT");
     }
 }

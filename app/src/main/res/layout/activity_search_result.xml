@@ -19,12 +19,44 @@
         android:layout_height="50dp" />
     </android.support.design.widget.AppBarLayout>
 
-    <android.support.v7.widget.RecyclerView
-
-        android:id="@+id/product_results"
+    <LinearLayout
+        android:id="@+id/product_results_ll"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-    </android.support.v7.widget.RecyclerView>
+        android:layout_height="match_parent">
+        <LinearLayout
+
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@color/primaryColorBlack"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="5dp">
+            <ImageView
+                android:layout_marginLeft="10dp"
+                android:id="@+id/grid_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/grid_on_white"
+                />
+
+            <ImageView
+                android:layout_marginLeft="10dp"
+                android:id="@+id/list_view"
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/list_white"
+                />
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/product_results"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent">
+        </android.support.v7.widget.RecyclerView>
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/empty_layout"

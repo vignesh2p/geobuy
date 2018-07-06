@@ -35,11 +35,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     private Context mCtx;
     private List<Product> products;
     Dialog productDetailDialog;
+    boolean isVertical;
 
 
-    public ProductAdapter(Context ctxt, List<Product> products) {
+    public ProductAdapter(Context ctxt, List<Product> products, boolean isVertical) {
         this.mCtx = ctxt;
         this.products = products;
+        this.isVertical = isVertical;
     }
 
 
@@ -47,7 +49,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @Override
     public ProductViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(mCtx);
-        View view = inflater.inflate(R.layout.product_item, null);
+        View view = null;
+        if(isVertical)
+            view =  inflater.inflate(R.layout.product_item, null);
+        else
+            view =  inflater.inflate(R.layout.product_grid_item, null);
         return new ProductViewHolder(view);
     }
 
@@ -69,7 +75,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         if(product.getProductDetails() != null && product.getProductDetails().size() > 0) {
             //if (product.getProductDetails() != null ) {
                 float discount = (Float.valueOf(product.getProductDetails().get(0).getOffer()) / 100) * product.getProductDetails().get(0).getPrice();
-                holder.productPrice.setText("₹ " + (product.getProductDetails().get(0).getPrice() - discount));
+                holder.productPrice.setText("₹ " + Math.round((product.getProductDetails().get(0).getPrice() - discount)));
             /*} else {
                 holder.productPrice.setText("₹ " + product.getProductDetails().get(0).getPrice());
             }*/
@@ -94,12 +100,12 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             }
         });
 
-        holder.check_nearby.setOnClickListener(new View.OnClickListener(){
+       /* holder.check_nearby.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
                 openProductDetailsPopup(product);
             }
-        });
+        });*/
 
         //setOnclick(product.getId(), holder.selectProduct);
     }
@@ -197,7 +203,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         TextView product_no_rating;
         LinearLayout checkNearbyAvailablity;
         CardView product_card;
-        LinearLayout check_nearby;
+      //  LinearLayout check_nearby;
         TextView preferred_org;
         RelativeLayout product_relative_layout;
 
@@ -208,9 +214,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             productRating = itemView.findViewById(R.id.product_rating);
             product_no_rating = itemView.findViewById(R.id.product_no_rating);
             productPrice = itemView.findViewById(R.id.product_price);
-            checkNearbyAvailablity = itemView.findViewById(R.id.check_nearby);
+           // checkNearbyAvailablity = itemView.findViewById(R.id.check_nearby);
             product_card = itemView.findViewById(R.id.product_card);
-            check_nearby = itemView.findViewById(R.id.check_nearby);
+           // check_nearby = itemView.findViewById(R.id.check_nearby);
             preferred_org = itemView.findViewById(R.id.preferred_org);
             product_relative_layout = itemView.findViewById(R.id.product_relative_layout);
         }

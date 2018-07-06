@@ -22,6 +22,7 @@ public class Product {
     private List<Product> productDetails;
     private String masterid;
     private int quanity =1;
+    private float amountToBePaid;
 
     public Product(String id, int quanity){
         this.id = id;
@@ -194,5 +195,13 @@ public class Product {
 
     public void setQuanity(int quanity) {
         this.quanity = quanity;
+    }
+
+    public float getAmountToBePaid() {
+        return amountToBePaid;
+    }
+
+    public void setAmountToBePaid(float amountToBePaid) {
+        this.amountToBePaid = amountToBePaid;
     }
 }

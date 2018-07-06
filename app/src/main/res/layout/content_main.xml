@@ -30,7 +30,10 @@
                 >
 
                 <LinearLayout
-                    android:layout_width="70dp"
+                    android:id="@+id/nearby_ll"
+                    android:clickable="true"
+                    android:layout_weight="0.25"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:elevation="2dp"
@@ -56,7 +59,10 @@
                         android:textSize="10dp"/>
                 </LinearLayout>
                 <LinearLayout
-                    android:layout_width="70dp"
+                    android:id="@+id/category_ll"
+                    android:clickable="true"
+                    android:layout_weight="0.25"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:elevation="2dp"
@@ -82,7 +88,10 @@
                         android:textSize="10dp"/>
                 </LinearLayout>
                 <LinearLayout
-                    android:layout_width="70dp"
+
+                    android:clickable="true"
+                    android:layout_weight="0.25"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:id="@+id/home_layout"
@@ -110,7 +119,7 @@
                         android:text="Home"
                         android:textSize="10dp"/>
                 </LinearLayout>
-                <LinearLayout
+              <!--  <LinearLayout
                     android:layout_width="70dp"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
@@ -134,9 +143,12 @@
                         android:layout_height="wrap_content"
                         android:text="Prime"
                         android:textSize="10dp" />
-                </LinearLayout>
+                </LinearLayout>-->
                 <LinearLayout
-                    android:layout_width="70dp"
+                    android:id="@+id/account_ll"
+                    android:clickable="true"
+                    android:layout_weight="0.25"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
                     android:elevation="2dp"

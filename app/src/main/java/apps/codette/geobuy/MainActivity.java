@@ -1,5 +1,6 @@
 package apps.codette.geobuy;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -12,23 +13,47 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.mikepenz.actionitembadge.library.ActionItemBadge;
 import com.mikepenz.actionitembadge.library.utils.BadgeStyle;
 
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
+import apps.codette.forms.CategoryMaster;
+import apps.codette.geobuy.Constants.GeobuyConstants;
 import apps.codette.geobuy.Constants.OrgService;
+import apps.codette.geobuy.adapters.CategoryMasterAdapter;
+import apps.codette.utils.RestCall;
+import apps.codette.utils.SessionManager;
+import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+
+    private String module;
+
+    private LinearLayout homeLayout;
+    private LinearLayout accountll;
+    private LinearLayout nearbyll;
+    private LinearLayout categoryll;
 
     private ImageView homeView;
     private TextView homeText;
@@ -50,7 +75,20 @@ public class MainActivity extends AppCompatActivity
 
     MapFragment mapFragment;
 
+    CategoryFragment categoryFragment;
+
+    HomeFragment homeFragment;
+
+    UserFragment userFragment;
+
+    SessionManager sessionManager;
     Menu menu;
+    Map<String, ?> userDetails;
+
+    NavigationView navigationView;
+
+    private boolean isRunning = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,14 +105,17 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        menu = navigationView.getMenu();
 
         manageBottomToolBar();
         setViewSelected(1);
 
         manageSearchBar();
+        sessionManager = new SessionManager(this);
+        userDetails = sessionManager.getUserDetails();
     }
 
     private void manageSearchBar() {
@@ -93,8 +134,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void manageBottomToolBar() {
+        homeLayout = findViewById(R.id.home_layout);
         homeView = findViewById(R.id.home_button);
         homeText = findViewById(R.id.home_button_text);
+        homeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setViewSelected(3);
+            }
+        });
         homeView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -102,8 +150,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        categoryll = findViewById(R.id.category_ll);
         categoryView = findViewById(R.id.category_button);
         categoryText = findViewById(R.id.category_text);
+        categoryll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setViewSelected(2);
+            }
+        });
         categoryView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -111,16 +166,22 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        nearbyll = findViewById(R.id.nearby_ll);
         nearByView = findViewById(R.id.nearby_button);
         nearByText = findViewById(R.id.nearby_button_text);
+        nearbyll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setViewSelected(1);
+            }
+        });
         nearByView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 setViewSelected(1);
             }
         });
-
-        primeView = findViewById(R.id.prime_button);
+        /*primeView = findViewById(R.id.prime_button);
         primeText = findViewById(R.id.prime_button_text);
         primeView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -128,9 +189,16 @@ public class MainActivity extends AppCompatActivity
                 setViewSelected(4);
             }
         });
-
+*/
+        accountll = findViewById(R.id.account_ll);
         accountView = findViewById(R.id.account_button);
         accountText = findViewById(R.id.account_button_text);
+        accountll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                setViewSelected(5);
+            }
+        });
         accountView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -151,7 +219,8 @@ public class MainActivity extends AppCompatActivity
                     hideView(welcomeBarLayout);
                     showView(appBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
-                    mapFragment = new MapFragment();
+                    if(mapFragment == null)
+                        mapFragment = new MapFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, mapFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.nearby_primary);
                     nearByView.setImageDrawable(mIcon);
@@ -162,7 +231,8 @@ public class MainActivity extends AppCompatActivity
                     hideView(welcomeBarLayout);
                     showView(appBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
-                    CategoryFragment categoryFragment = new CategoryFragment();
+                    if(categoryFragment == null)
+                        categoryFragment = new CategoryFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, categoryFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.category_primary);
                     categoryView.setImageDrawable(mIcon);
@@ -172,6 +242,10 @@ public class MainActivity extends AppCompatActivity
                 case 3 : {
                     hideView(welcomeBarLayout);
                     showView(appBarLayout);
+                    FragmentManager fm = getSupportFragmentManager();
+                    if(homeFragment == null)
+                        homeFragment = new HomeFragment();
+                    fm.beginTransaction().replace(R.id.dashboard_content, homeFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.home_primary);
                     homeView.setImageDrawable(mIcon);
                     homeText.setTextColor(getResources().getColor(R.color.colorPrimary));
@@ -181,15 +255,16 @@ public class MainActivity extends AppCompatActivity
                     hideView(welcomeBarLayout);
                     showView(appBarLayout);
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.prime_primary);
-                    primeView.setImageDrawable(mIcon);
-                    primeText.setTextColor(getResources().getColor(R.color.colorPrimary));
+                   /* primeView.setImageDrawable(mIcon);
+                    primeText.setTextColor(getResources().getColor(R.color.colorPrimary));*/
                     break;
                 }
                 case 5 : {
                     hideView(appBarLayout);
                     showView(welcomeBarLayout);
                     FragmentManager fm = getSupportFragmentManager();
-                    UserFragment userFragment = new UserFragment();
+                    if(userFragment == null)
+                        userFragment = new UserFragment();
                     fm.beginTransaction().replace(R.id.dashboard_content, userFragment).commit();
                     Drawable mIcon= ContextCompat.getDrawable(this, R.drawable.account_primary);
                     accountView.setImageDrawable(mIcon);
@@ -224,8 +299,8 @@ public class MainActivity extends AppCompatActivity
 
         if(selectedPosition != 4) {
             Drawable pIcon= ContextCompat.getDrawable(this, R.drawable.prime_black);
-            primeView.setImageDrawable(pIcon);
-            primeText.setTextColor(getResources().getColor(R.color.black_overlay));
+            /*primeView.setImageDrawable(pIcon);
+            primeText.setTextColor(getResources().getColor(R.color.black_overlay));*/
         }
 
         if(selectedPosition != 5) {
@@ -251,6 +326,7 @@ public class MainActivity extends AppCompatActivity
         this.menu = menu;
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+
         // Read your drawable from somewhere
         Drawable dr = getResources().getDrawable(R.drawable.kart);
         Bitmap bitmap = ((BitmapDrawable) dr).getBitmap();
@@ -262,6 +338,7 @@ public class MainActivity extends AppCompatActivity
         OrgService orgService = new OrgService();
         int count = orgService.getCartItems(this);
         ActionItemBadge.update(this, menuItem,  d, badgeStyle, count);
+        //getCategoryMaster();
         return true;
     }
 
@@ -286,27 +363,34 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        } else if (id == R.id.item_samplebadge) {
+        if (id == R.id.item_samplebadge) {
             Intent intent = new Intent(this, CartActivity.class);
             startActivity(intent);
+        } else if( id == R.id.my_cart) {
+            if(userDetails.get("useremail") != null) {
+                Intent intent = new Intent(this, CartActivity.class);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(this, SigninActivity.class);
+                startActivity(intent);
+            }
+        } else if(id == R.id.my_orders) {
+            if(userDetails.get("useremail") != null) {
+                Intent intent = new Intent(this, OrderDetailsActivity.class);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(this, SigninActivity.class);
+                startActivity(intent);
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
+
 
 
     @Override
@@ -318,6 +402,7 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
                 return true;
             }
+
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -340,8 +425,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 1000){
+        if (requestCode == GeobuyConstants.REQUEST_LOCATION){
             mapFragment.onActivityResult(requestCode, resultCode, data);
+        } else if (requestCode == GeobuyConstants.HOME_REQUEST_LOCATION){
+            homeFragment.onActivityResult(requestCode, resultCode, data);
         }
         else {
             super.onActivityResult(requestCode, resultCode, data);
@@ -351,11 +438,42 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResume(){
         super.onResume();
+        sessionManager = new SessionManager(this);
+        userDetails = sessionManager.getUserDetails();
         // put your code here...
         if(menu != null) {
             int count = new OrgService().getCartItems(this);
-            ActionItemBadge.update(menu.findItem(R.id.item_samplebadge), count);
+            ActionItemBadge actionItemBadge = new ActionItemBadge();
+            actionItemBadge.update(menu.findItem(R.id.item_samplebadge), count);
         }
+    }
+
+
+
+
+    private void formUiforCategory(String categoryJson) {
+        toast(categoryJson);
+        Gson gson = new Gson();
+        Type type = new TypeToken<List<CategoryMaster>>() {}.getType();
+        List<CategoryMaster> cts  = gson.fromJson(categoryJson, type);
+        SubMenu subMenu = menu.addSubMenu("Categories");
+        int counter =0;
+        for(CategoryMaster categoryMaster : cts) {
+            subMenu.add(counter, Menu.FIRST + counter, Menu.FIRST, categoryMaster.getName());
+            counter++;
+        }
+        navigationView.invalidate();
+      //  invalidateOptionsMenu();
 
     }
+
+    private void toast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    public  void setModule(String module){ this.module =module; }
+    public String getModule(){return module;}
+
+    public void setRunning(boolean isRunning) {this.isRunning = isRunning;}
+    public boolean isBannerRunning() {return isRunning;}
 }

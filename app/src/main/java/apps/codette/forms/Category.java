@@ -10,7 +10,42 @@ public class Category {
     private String tittle;
     private String image;
     private String category;
+    private boolean isBanner;
+    private boolean isOrg;
+    private boolean isProducts;
+    private String[] linkId;
 
+    public boolean isOrg() {
+        return isOrg;
+    }
+
+    public void setOrg(boolean org) {
+        isOrg = org;
+    }
+
+    public boolean isProducts() {
+        return isProducts;
+    }
+
+    public void setProducts(boolean products) {
+        isProducts = products;
+    }
+
+    public String[] getLinkId() {
+        return linkId;
+    }
+
+    public void setLinkId(String[] linkId) {
+        this.linkId = linkId;
+    }
+
+    public boolean isBanner() {
+        return isBanner;
+    }
+
+    public void setBanner(boolean banner) {
+        isBanner = banner;
+    }
 
     public String getCategory() {
         return category;
