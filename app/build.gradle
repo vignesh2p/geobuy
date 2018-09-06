@@ -65,5 +65,8 @@ dependencies {
     compile 'com.google.firebase:firebase-messaging:11.4.2'
     compile('com.razorpay:checkout:1.4.8')
     compile 'com.github.vipulasri:timelineview:1.0.6'
+    compile 'com.android.support:recyclerview-v7:26.1.0'
+    compile 'com.journeyapps:zxing-android-embedded:3.6.0'
+    compile 'com.google.android.gms:play-services-places:11.4.2'
 }
 apply plugin: 'com.google.gms.google-services'

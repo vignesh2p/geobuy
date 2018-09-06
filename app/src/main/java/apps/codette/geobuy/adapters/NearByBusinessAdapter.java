@@ -62,7 +62,7 @@ public class NearByBusinessAdapter extends RecyclerView.Adapter<NearByBusinessAd
                 moveToOrgDetails(busns.getOrgid());
             }
         });
-
+        holder.nearby_business_address.setText(busns.getOrgaddress());
     }
 
 
@@ -91,12 +91,14 @@ public class NearByBusinessAdapter extends RecyclerView.Adapter<NearByBusinessAd
 
         TextView textViewTitle;
         ImageView imageView;
+        TextView nearby_business_address;
 
         public BusinessViewHolder(View itemView) {
             super(itemView);
 
             textViewTitle = itemView.findViewById(R.id.nearby_business_name);
             imageView = itemView.findViewById(R.id.nearby_business_image);
+            nearby_business_address = itemView.findViewById(R.id.nearby_business_address);
         }
     }
 }

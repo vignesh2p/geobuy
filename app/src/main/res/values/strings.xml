@@ -132,7 +132,7 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
-    <string name="filter_by_distance">Filter by Distance </string>
+    <string name="filter_by_distance">Filter by location </string>
     <string name="title_activity_product_details">Product Details</string>
     <string name="ratings_reviews"><![CDATA[Ratings & Reviews]]></string>
     <string name="rate_review"><![CDATA[Rate & Review]]></string>
@@ -164,4 +164,9 @@
     <string name="title_activity_order_success">OrderSuccessActivity</string>
     <string name="payment_cancelled">Payment Cancelled | Failed.</string>
     <string name="title_activity_order_detail">Order Details</string>
+    <string name="title_activity_image_view">Geobuy</string>
+    <string name="title_activity_sub_category_activty">SubCategory</string>
+    <string name="title_activity_wish_list">Wishlist</string>
+    <string name="title_activity_filter">Filters</string>
+    <string name="apply">Apply</string>
 </resources>

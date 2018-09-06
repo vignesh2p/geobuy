@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -22,10 +23,13 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -35,6 +39,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -46,7 +55,9 @@ import org.json.JSONObject;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import apps.codette.forms.GeobuySearch;
 import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
 import apps.codette.geobuy.Constants.GeobuyConstants;
@@ -54,17 +65,18 @@ import apps.codette.geobuy.adapters.NearByBusinessAdapter;
 import apps.codette.geobuy.adapters.SearchTextProductAdapter;
 import apps.codette.utils.CClocation;
 import apps.codette.utils.RestCall;
+import apps.codette.utils.SessionManager;
 import cz.msebera.android.httpclient.Header;
 
 public class SearchActivity extends AppCompatActivity implements LocationListener {
 
-    private List<Product> products;
+    private List<GeobuySearch> products;
 
     EditText searchText;
 
     TextView filteredLocation;
 
-    private List<Product> trendingProducts;
+    private List<GeobuySearch> trendingProducts;
 
     private boolean switchFilter;
 
@@ -79,12 +91,23 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
 
     Switch filter_by_distance_switch;
 
+    SessionManager sessionManager;
+
+    LinearLayout filter_location_ll;
+
+    TextView location_text;
+
+    ImageView location_image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
         hideView(findViewById(R.id.empty_layout));
+        filter_location_ll = findViewById(R.id.filter_location_ll);
+        location_text=findViewById(R.id.location_text);
+        location_image = findViewById(R.id.location_image);
+        location_image.setOnClickListener(locationSelectListener());
         Toolbar toolbar = (Toolbar) findViewById(R.id.search_toolbar);
         setSupportActionBar(toolbar);
         ImageView back = findViewById(R.id.search_back);
@@ -96,12 +119,13 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
         });
         manageSwitchFilter();
         manageNearByBusinessView();
-        manageTrendingProductsView();
+      //  manageTrendingProductsView();
         manageSearch();
         manageFilterByLocation();
-        hideView(discreteNormal);
+       // hideView(discreteNormal);
         hideView(filteredLocation);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        sessionManager = new SessionManager(this);
     }
 
     private void manageSwitchFilter() {
@@ -112,11 +136,20 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 switchFilter = b;
                 if (!b) {
-                    hideView(discreteNormal);
+                    hideView(filter_location_ll);
                     hideView(filteredLocation);
                 } else {
-                    showView(discreteNormal);
+                    showView(filter_location_ll);
                     showView(filteredLocation);
+                    Map<String, ?> userdetails = sessionManager.getUserDetails();
+                    String lat = (String) userdetails.get("lat");
+                    String lon = (String) userdetails.get("lon");
+                    String place = (String) userdetails.get("place");
+                    if (lat == null || lon == null) {
+                        openPlacePicker();
+                    } else{
+                        location_text.setText(place);
+                    }
                 }
                 String text = searchText.getText().toString();
                 if (text.length() > 0) {
@@ -128,27 +161,24 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
 
     private void getProductsAndOrgs(String text) {
         if (switchFilter) {
-            if (ActivityCompat.checkSelfPermission(this,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(this,
-                            android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                                android.Manifest.permission.ACCESS_FINE_LOCATION},
-                        GeobuyConstants.MY_PERMISSIONS_REQUEST_LOCATION);
+            Map<String, ?> userdetails = sessionManager.getUserDetails();
+            String lat = (String) userdetails.get("lat");
+            String lon = (String) userdetails.get("lon");
+            if (lat != null && lon != null) {
+                searchProductsBasedOnLocation(Double.parseDouble(lat), Double.parseDouble(lon));
+                searchOrgsBasedOnLocaion(Double.parseDouble(lat), Double.parseDouble(lon));
             } else {
+                openPlacePicker();
 
-
-                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                /*if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     location = getLastBestLocation();
                   //  toast(location.getLatitude() + "  " + location.getLongitude());
 
-                    searchProductsBasedOnLocation(location);
-                    searchOrgsBasedOnLocaion(location);
+                    searchProductsBasedOnLocation(location.getLatitude(), location.getLongitude());
+                    searchOrgsBasedOnLocaion(location.getLatitude(), location.getLongitude());
                 } else {
                     requestToTurnOnGPS();
-                }
+                }*/
 
             }
         } else {
@@ -203,11 +233,11 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
                 if (text.length() > 0) {
                     getProductsAndOrgs(text);
                 } else {
-                    Log.i("trendingProducts ", "" + trendingProducts.size());
+                    /*Log.i("trendingProducts ", "" + trendingProducts.size());
                     if (trendingProducts != null) {
                         updateProductsInRecyclerView(trendingProducts);
                     } else
-                        manageTrendingProductsView();
+                        manageTrendingProductsView();*/
                 }
             }
         });
@@ -273,7 +303,7 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
             //jsonObject = new JSONObject(productsJson);
             Log.i("PresponseBody", productsJson);
             Gson gson = new Gson();
-            Type type = new TypeToken<List<Product>>() {
+            Type type = new TypeToken<List<GeobuySearch>>() {
             }.getType();
             products = gson.fromJson(productsJson, type);
             updateProductsInRecyclerView(products);
@@ -286,7 +316,7 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
 
     private void manageTrendingProductsView() {
 
-        trendingProducts = new ArrayList<Product>();
+        trendingProducts = new ArrayList<GeobuySearch>();
         RequestParams requestParams = new RequestParams();
         RestCall.get("trendings", requestParams, new AsyncHttpResponseHandler() {
             @Override
@@ -305,13 +335,13 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
     private void formTrendings(String trendingJson) {
         trendingProducts = null;
         Gson gson = new Gson();
-        Type type = new TypeToken<List<Product>>() {}.getType();
+        Type type = new TypeToken<List<GeobuySearch>>() {}.getType();
         trendingProducts = gson.fromJson(trendingJson, type);
         updateProductsInRecyclerView(trendingProducts);
     }
 
 
-    private void updateProductsInRecyclerView(List<Product> products) {
+    private void updateProductsInRecyclerView(List<GeobuySearch> products) {
         if (products != null && !products.isEmpty()) {
             hideView(findViewById(R.id.empty_layout));
             RecyclerView rvP = findViewById(R.id.nearby_products__recycler_view);
@@ -462,18 +492,17 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
     @Override
     public void onLocationChanged(Location location) {
         this.location = location;
-        searchProductsBasedOnLocation(location);
-        searchOrgsBasedOnLocaion(location);
+        searchProductsBasedOnLocation(location.getLatitude(), location.getLongitude());
+        searchOrgsBasedOnLocaion(location.getLatitude(), location.getLongitude());
     }
 
-    private void searchOrgsBasedOnLocaion(Location location) {
+    private void searchOrgsBasedOnLocaion(double lat, double lon) {
         RequestParams params = new RequestParams();
         params.put("searchkey", searchText.getText().toString());
-        Number num = location.getLatitude();
-        params.put("maxlattitude", (Number) (location.getLatitude() + (distance * 0.0043352)));
-        params.put("maxlongitude", (Number) (location.getLongitude() + (distance * 0.0043352)));
-        params.put("minlattitude", (Number) (location.getLatitude() - (distance * 0.0043352)));
-        params.put("minlongitude", (Number) (location.getLongitude() - (distance * 0.0043352)));
+        params.put("maxlattitude", (Number) (lat + (distance * 0.0043352)));
+        params.put("maxlongitude", (Number) (lon + (distance * 0.0043352)));
+        params.put("minlattitude", (Number) (lat - (distance * 0.0043352)));
+        params.put("minlongitude", (Number) (lon - (distance * 0.0043352)));
         RestCall.post("orgsSearch", params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -492,15 +521,14 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
         });
     }
 
-    private void searchProductsBasedOnLocation(Location location) {
+    private void searchProductsBasedOnLocation(double lat, double lon) {
 
         RequestParams params = new RequestParams();
         params.put("searchkey", searchText.getText().toString());
-        Number num = location.getLatitude();
-        params.put("maxlattitude", (Number) (location.getLatitude() + (distance * 0.0043352)));
-        params.put("maxlongitude", (Number) (location.getLongitude() + (distance * 0.0043352)));
-        params.put("minlattitude", (Number) (location.getLatitude() - (distance * 0.0043352)));
-        params.put("minlongitude", (Number) (location.getLongitude() - (distance * 0.0043352)));
+        params.put("maxlattitude", (Number) (lat + (distance * 0.0043352)));
+        params.put("maxlongitude", (Number) (lon + (distance * 0.0043352)));
+        params.put("minlattitude", (Number) (lat - (distance * 0.0043352)));
+        params.put("minlongitude", (Number) (lon - (distance * 0.0043352)));
 
         RestCall.post("productsSearch", params, new AsyncHttpResponseHandler() {
             @Override
@@ -534,7 +562,7 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case GeobuyConstants.REQUEST_LOCATION:
+           /* case GeobuyConstants.REQUEST_LOCATION:
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made
@@ -551,7 +579,27 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
                         break;
                     }
                 }
+                break;*/
+
+            case GeobuyConstants.PLACE_PICKER_REQUEST :
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        Place place = PlacePicker.getPlace(data, this);
+                        LatLng latLng = place.getLatLng();
+                        updateGeobuyLocation(latLng.latitude, latLng.longitude, place);
+                        searchProductsBasedOnLocation(latLng.latitude, latLng.longitude);
+                        searchOrgsBasedOnLocaion(latLng.latitude, latLng.longitude);
+                        location_text.setText(place.getName());
+                        break;
+                    }
+                    default:
+                    {
+                        filter_by_distance_switch.setChecked(false);
+                        break;
+                    }
+                }
                 break;
+
         }
 
     }
@@ -580,6 +628,37 @@ public class SearchActivity extends AppCompatActivity implements LocationListene
         }
         else {
             return locationNet;
+        }
+    }
+
+
+    private void updateGeobuyLocation(double lat, double lon, Place place){
+        SharedPreferences.Editor editor = sessionManager.getEditor();
+        editor.putString("lat", String.valueOf(lat));
+        editor.putString("lon", String.valueOf(lon));
+        editor.putString("place", String.valueOf(place.getName()));
+        sessionManager.put(editor);
+    }
+
+    private View.OnClickListener locationSelectListener(){
+        final Activity activity = this;
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openPlacePicker();
+            }
+        };
+    }
+
+    private void openPlacePicker() {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+        builder.setLatLngBounds(GeobuyConstants.GEOBUY_LAT_LNG_BOUNDS);
+        try {
+            startActivityForResult(builder.build(this), GeobuyConstants.PLACE_PICKER_REQUEST);
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
         }
     }
 }

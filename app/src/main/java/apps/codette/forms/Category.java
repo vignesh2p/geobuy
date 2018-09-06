@@ -1,5 +1,7 @@
 package apps.codette.forms;
 
+import java.util.List;
+
 /**
  * Created by user on 25-03-2018.
  */
@@ -14,6 +16,7 @@ public class Category {
     private boolean isOrg;
     private boolean isProducts;
     private String[] linkId;
+    private List<SubCategory> subcategory;
 
     public boolean isOrg() {
         return isOrg;
@@ -88,6 +91,14 @@ public class Category {
 
     public void setTittle(String tittle) {
         this.tittle = tittle;
+    }
+
+    public List<SubCategory> getSubcategory() {
+        return subcategory;
+    }
+
+    public void setSubcategory(List<SubCategory> subcategory) {
+        this.subcategory = subcategory;
     }
 
     @Override

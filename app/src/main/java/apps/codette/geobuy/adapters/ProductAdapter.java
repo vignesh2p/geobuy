@@ -20,11 +20,13 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import apps.codette.forms.Organization;
 import apps.codette.forms.Product;
 import apps.codette.geobuy.ProductDetailsActivity;
 import apps.codette.geobuy.R;
+import apps.codette.utils.SessionManager;
 
 /**
  * Created by user on 25-03-2018.
@@ -36,12 +38,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     private List<Product> products;
     Dialog productDetailDialog;
     boolean isVertical;
+    String orgId;
 
 
-    public ProductAdapter(Context ctxt, List<Product> products, boolean isVertical) {
+    public ProductAdapter(Context ctxt, List<Product> products, boolean isVertical, String orgId) {
         this.mCtx = ctxt;
         this.products = products;
         this.isVertical = isVertical;
+        this.orgId = orgId;
     }
 
 
@@ -50,6 +54,8 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     public ProductViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(mCtx);
         View view = null;
+
+
         if(isVertical)
             view =  inflater.inflate(R.layout.product_item, null);
         else
@@ -59,44 +65,52 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
     @Override
     public void onBindViewHolder(ProductViewHolder holder, int position) {
-        final Product product = products.get(position);
+        final Product product = (products.get(position).getProductDetails() != null ? products.get(position).getProductDetails().get(0) : products.get(position));
+
         if(product.getImage() != null)
             Glide.with(mCtx)
                 .load(product.getImage()[0])
                 .into(holder.imageView);
         holder.productTitle.setText(product.getTitle());
-        if(product.getRating() > 0)
-            holder.productRating.setText(""+product.getRating());
-        else {
+        if(product.getRating() != 0 ) {
+            String avgRating = String.valueOf(product.getRating());
+            avgRating = (avgRating.length() >3 ? avgRating.substring(0,3) : avgRating );
+            holder.productRating.setText("" + avgRating);
+        } else {
             holder.productRating.setVisibility(View.INVISIBLE);
             holder.product_no_rating.setVisibility(View.VISIBLE);
         }
-        Log.i("product", product.toString());
-        if(product.getProductDetails() != null && product.getProductDetails().size() > 0) {
+      //  if(product.getProductDetails() != null && product.getProductDetails().size() > 0) {
             //if (product.getProductDetails() != null ) {
-                float discount = (Float.valueOf(product.getProductDetails().get(0).getOffer()) / 100) * product.getProductDetails().get(0).getPrice();
-                holder.productPrice.setText("₹ " + Math.round((product.getProductDetails().get(0).getPrice() - discount)));
+                float discount = (Float.valueOf(product.getOffer()) / 100) * product.getPrice();
+                holder.productPrice.setText("₹ " + Math.round((product.getPrice() - discount)));
             /*} else {
                 holder.productPrice.setText("₹ " + product.getProductDetails().get(0).getPrice());
             }*/
-            holder.preferred_org.setText(product.getProductDetails().get(0).getOrgname());
-        } else {
+            holder.preferred_org.setText(product.getOrgname());
+       /* } else {
             holder.productPrice.setText("₹ " + product.getPrice());
             holder.preferred_org.setText(product.getOrgname());
-        }
+        }*/
       //  holder.productPrice.setText("₹"+product.getProductDetails().get(0).getPrice());
 
         holder.product_card.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                moveToProductDetailActivity(product.getId());
+                if(orgId == null)
+                    moveToProductDetailActivity(product.getId());
+                else
+                    moveToProductDetailActivity(product.getMasterid());
             }
         });
 
         holder.product_relative_layout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                moveToProductDetailActivity(product.getId());
+                if(orgId == null)
+                    moveToProductDetailActivity(product.getId());
+                else
+                    moveToProductDetailActivity(product.getMasterid());
             }
         });
 
@@ -162,7 +176,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
     private void moveToProductDetailActivity(String id) {
         Intent intent = new Intent(mCtx, ProductDetailsActivity.class);
+
         intent.putExtra("productId", id);
+        intent.putExtra("orgId", orgId);
         mCtx.startActivity(intent);
     }
 

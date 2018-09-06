@@ -1,6 +1,7 @@
 package apps.codette.geobuy.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +13,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
+import apps.codette.geobuy.ImageViewActivity;
 import apps.codette.geobuy.R;
 
 /**
@@ -22,12 +24,17 @@ public class  MyCustomPagerAdapter extends PagerAdapter{
     Context context;
     String images[];
     LayoutInflater layoutInflater;
+    boolean doOpen=true;
 
 
     public MyCustomPagerAdapter(Context context, String images[]) {
         this.context = context;
         this.images = images;
         layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    }
+
+    public void setDoOpen(boolean value) {
+        doOpen = value;
     }
 
     @Override
@@ -62,11 +69,19 @@ public class  MyCustomPagerAdapter extends PagerAdapter{
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(context, "you clicked image " + (position + 1), Toast.LENGTH_LONG).show();
+                goToImageActivity();
             }
         });
 
         return itemView;
+    }
+
+    private void goToImageActivity(){
+        if(doOpen) {
+            Intent intent = new Intent(context, ImageViewActivity.class);
+            intent.putExtra("images", images);
+            context.startActivity(intent);
+        }
     }
 
     @Override

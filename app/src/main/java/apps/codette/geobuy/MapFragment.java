@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -21,6 +22,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -30,11 +32,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -44,6 +49,8 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -63,7 +70,9 @@ import com.loopj.android.http.RequestParams;
 //import com.tbuonomo.viewpagerdotsindicator.DotsIndicator;
 
 import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
@@ -71,8 +80,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import apps.codette.forms.Banner;
 import apps.codette.forms.Organization;
 import apps.codette.geobuy.Constants.GeobuyConstants;
+import apps.codette.geobuy.adapters.BannerAdapter;
 import apps.codette.geobuy.adapters.MyCustomPagerAdapter;
 import apps.codette.utils.CClocation;
 import apps.codette.utils.RestCall;
@@ -127,6 +138,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     MainActivity mainActivity;
 
+
+    TextView location_text;
+
+    ImageView location_image;
+
+    View nearby_map;
+
+
     public MapFragment() {
         // Required empty public constructor
 
@@ -174,7 +193,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         progressDialog.setMessage("Loading");
         progressDialog.setCancelable(false);
         progressDialog.setCanceledOnTouchOutside(false);
-        Switch map_view_active_switch = view.findViewById(R.id.map_view_active_switch);
+        //Switch map_view_active_switch = view.findViewById(R.id.map_view_active_switch);
+        location_text = view.findViewById(R.id.location_text);
+        location_image =  view.findViewById(R.id.location_image);
+        nearby_map = view.findViewById(R.id.nearby_map);
+        updateLocation(location_text);
+        location_image.setOnClickListener(locationSelectListener());
         /*Switch map_view_switch = view.findViewById(R.id.map_view_switch);
 
         map_view_switch.setChecked(true);
@@ -188,7 +212,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 }
             }
         });*/
-        map_view_active_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        /*map_view_active_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if (b) {
@@ -197,12 +221,70 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                     compoundButton.setText("Open / Closed");
                 }
             }
-        });
+        });*/
 
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(apps.codette.geobuy.R.id.nearby_map);
         mapFragment.getMapAsync(this);
         businessDetailsDialog = new Dialog(this.getContext());
         return view;
+    }
+
+    private View.OnClickListener locationSelectListener(){
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openPlacePicker();
+            }
+        };
+    }
+
+    private void openPlacePicker() {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+        builder.setLatLngBounds(GeobuyConstants.GEOBUY_LAT_LNG_BOUNDS);
+        try {
+            startActivityForResult(builder.build(mainActivity), GeobuyConstants.PLACE_PICKER_REQUEST);
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateLocation(TextView textView) {
+        Map<String, ?> map = sessionManager.getUserDetails();
+        if(map != null && map.get("lat") != null && map.get("place") != null){
+            String place = map.get("place").toString();
+            textView.setText(place);
+            //getLocation(Float.valueOf(lat), Float.valueOf(lon), textView);
+        } else {
+            textView.setText("Select location");
+        }
+        textView.setOnClickListener(locationSelectListener());
+    }
+
+    private void getLocation(float lat, float lon, final TextView textView) {
+        StringBuffer query = new StringBuffer("getDistance");
+        query.append("?lat1="+lat);
+        query.append("&lon1="+lon);
+        query.append("&lat2=12.9007");
+        query.append("&lon2=80.1969");
+        RestCall.get(query.toString(), new RequestParams(), new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject jsonObject = new JSONObject(new String(responseBody));
+                    String location = jsonObject.get("origin").toString();
+                    textView.setText(location.split(",")[0]+","+location.split(",")[1]);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
     }
 
     public void ShowPopup(Marker marker) {
@@ -385,7 +467,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public void onLocationChanged(Location location) {
-        nativeupdatePosition(location);
+       // updateGeobuyLocation(location.getLatitude(), location.getLongitude());
+        nativeupdatePosition(location.getLatitude(), location.getLongitude(), true);
     }
 
     @Override
@@ -447,19 +530,32 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         } catch (Resources.NotFoundException e) {
             Log.e("MF", "Can't find style. Error: ", e);
         }
-        if (ActivityCompat.checkSelfPermission(getContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getContext(),
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        Map<String, ?> userdetails = sessionManager.getUserDetails();
+        String lat = (String) userdetails.get("lat");
+        String lon = (String) userdetails.get("lon");
+        String place = (String) userdetails.get("place");
 
-            ActivityCompat.requestPermissions(getActivity(),
-                    new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                            android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSIONS_REQUEST_LOCATION);
+        if(lat != null && lon != null) {
+            //toast(lat+"   "+lon);
+            nativeupdatePosition(Double.parseDouble(lat), Double.parseDouble(lon), false);
         } else {
-            requestToTurnOnGPS();
 
+            /*if (ActivityCompat.checkSelfPermission(getContext(),
+                    android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(getContext(),
+                            android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            } else {
+                requestToTurnOnGPS();
+
+            }*/
+            //openPlacePicker();
         }
+
     }
 
     LocationManager locationManager;
@@ -485,12 +581,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     }
 
-    public void nativeupdatePosition(Location location) {
-        if (location != null) {
+    public void nativeupdatePosition(double lattitude, double longitude, boolean animate) {
+    //    if (location != null) {
             RequestParams params = new RequestParams();
-            Number num = location.getLatitude();
             // Add a marker in Sydney and move the camera
-            LatLng pos = new LatLng(location.getLatitude(), location.getLongitude());
+
+            LatLng pos = new LatLng(lattitude, longitude);
             MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(pos);
             markerOptions.title("Your location");
@@ -510,8 +606,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                         .zoom(17)                   // Sets the zoom
                         // .bearing(90)                // Sets the orientation of the camera to east
                         //  .tilt(50)                   // Sets the tilt of the camera to 30 degrees
-                        .build();                   // Creates a CameraPosition from the builder
-                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        .build();
+               // if(animate)// Creates a CameraPosition from the builder
+                    mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
                 mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
 
@@ -544,7 +641,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 });
             }
 
-        }
+       // }
     }
 
 
@@ -694,15 +791,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     }
 
 
-    private void toast(String s) {
-        if(mainActivity.getModule().equalsIgnoreCase("MAPFRAGMENT"))
-            Toast.makeText(this.getContext(), "" + s, Toast.LENGTH_SHORT).show();
+    private void toast(String text) {
+        if(mainActivity.getModule().equalsIgnoreCase("MAPFRAGMENT")) {
+            Snackbar.make(nearby_map, text, Snackbar.LENGTH_SHORT).show();
+                   // .setAction("Action", null).show();
+           // Toast.makeText(this.getContext(), "" + text, Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case GeobuyConstants.REQUEST_LOCATION:
+            /*case GeobuyConstants.REQUEST_LOCATION:
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made
@@ -720,11 +820,40 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                         break;
                     }
                 }
+                break;*/
+            case GeobuyConstants.PLACE_PICKER_REQUEST :
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        // All required changes were successfully made
+                        Place place = PlacePicker.getPlace(data, this.mainActivity);
+                        LatLng latLng = place.getLatLng();
+                        updateGeobuyLocation(latLng.latitude, latLng.longitude, place);
+                        location_text.setText(place.getName());
+                        CameraPosition cameraPosition = new CameraPosition.Builder()
+                                .target(latLng)      // Sets the center of the map to Mountain View
+                                .zoom(17)                   // Sets the zoom
+                                .build();
+                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        break;
+                    }
+                    default:
+                    {
+                        break;
+                    }
+                }
                 break;
+
         }
 
     }
     private boolean isCurrentFragment(){
         return mainActivity.getModule().equalsIgnoreCase("MAPFRAGMENT");
+    }
+    private void updateGeobuyLocation(double lat, double lon, Place place){
+        SharedPreferences.Editor editor = sessionManager.getEditor();
+        editor.putString("lat", String.valueOf(lat));
+        editor.putString("lon", String.valueOf(lon));
+        editor.putString("place", String.valueOf(place.getName()));
+        sessionManager.put(editor);
     }
 }

@@ -23,6 +23,16 @@ public class Product {
     private String masterid;
     private int quanity =1;
     private float amountToBePaid;
+    private int gpriority;
+    private String orderStatus="O";
+
+    public String getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(String orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 
     public Product(String id, int quanity){
         this.id = id;
@@ -203,5 +213,13 @@ public class Product {
 
     public void setAmountToBePaid(float amountToBePaid) {
         this.amountToBePaid = amountToBePaid;
+    }
+
+    public int getGpriority() {
+        return gpriority;
+    }
+
+    public void setGpriority(int gpriority) {
+        this.gpriority = gpriority;
     }
 }

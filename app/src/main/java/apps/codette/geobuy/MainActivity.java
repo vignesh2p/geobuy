@@ -382,8 +382,19 @@ public class MainActivity extends AppCompatActivity
                 Intent intent = new Intent(this, SigninActivity.class);
                 startActivity(intent);
             }
-        }
+        } else if(id == R.id.wish_list) {
+            if(userDetails.get("useremail") != null) {
+                Intent intent = new Intent(this, WishListActivity.class);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(this, SigninActivity.class);
+                startActivity(intent);
+            }
 
+        } else if(id == R.id.notifications || id ==R.id.action_notifications) {
+                Intent intent = new Intent(this, NotificationActivity.class);
+                startActivity(intent);
+        }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
@@ -402,7 +413,11 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
                 return true;
             }
-
+            case R.id.action_notifications: {
+                Intent intent = new Intent(this, NotificationActivity.class);
+                startActivity(intent);
+                return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -438,6 +453,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResume(){
         super.onResume();
+        sessionManager = null;
         sessionManager = new SessionManager(this);
         userDetails = sessionManager.getUserDetails();
         // put your code here...

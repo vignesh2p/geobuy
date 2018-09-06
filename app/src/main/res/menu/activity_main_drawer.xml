@@ -5,7 +5,7 @@
     
     >
 
-    <item android:title="Categories">
+    <!--<item android:title="Categories">
     <menu>
         <item
             android:id="@+id/nav_camera"
@@ -20,7 +20,7 @@
             android:id="@+id/nav_manage"
             android:title="Books" />
     </menu>
-    </item>
+    </item>-->
 
     <item android:title="Account">
         <menu>
@@ -29,7 +29,7 @@
                 android:icon="@drawable/offer_white"
                 android:title="Offer Zone" />
             <item
-                android:id="@+id/nav_send"
+                android:id="@+id/notifications"
                 android:icon="@drawable/notifications_white"
                 android:title="Notifications" />
 

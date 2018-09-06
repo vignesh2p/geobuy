@@ -35,9 +35,10 @@
                 android:layout_height="wrap_content"
                 android:text="@string/filter_by_distance"/>
             <TextView
+                android:text=""
                 android:textColor="@color/black_overlay"
                 android:id="@+id/filtered_location"
-                android:layout_margin="5dp"
+                android:layout_marginLeft="10dp"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
                 android:layout_width="wrap_content"
@@ -45,15 +46,47 @@
                 android:textStyle="bold"/>
 
         </LinearLayout>
-        <org.adw.library.widgets.discreteseekbar.DiscreteSeekBar
-            android:id="@+id/filter_location"
+
+
+        <LinearLayout
+            android:id="@+id/filter_location_ll"
+            android:layout_margin="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:dsb_min="0"
-            app:dsb_max="100"
-            app:dsb_value="0"
-            />
+            android:orientation="vertical"
+            android:visibility="gone"
+            >
 
+            <TextView
+                android:id="@+id/location_text"
+                android:text="Chennai"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+                <org.adw.library.widgets.discreteseekbar.DiscreteSeekBar
+                    android:id="@+id/filter_location"
+                    android:layout_width="170dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.7"
+                    app:dsb_max="100"
+                    app:dsb_min="0"
+                    app:dsb_value="0" />
+                <ImageView
+                    android:id="@+id/location_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/my_location_black"
+                    />
+
+            </LinearLayout>
+
+        </LinearLayout>
         <LinearLayout
             android:id="@+id/business_search_layout"
             android:layout_width="match_parent"
@@ -72,7 +105,7 @@
             <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/nearby_business__recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
+                android:layout_height="120dp"
                 android:columnWidth="90dp"
                 android:gravity="center"
                 android:horizontalSpacing="5dp"
